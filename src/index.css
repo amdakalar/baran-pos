@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@100..900&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  * {
+    border-radius: 0px !important;
+  }
+}
+
+html[lang="ku"],
+html[lang="ku"] body,
+html[lang="ku"] button,
+html[lang="ku"] input,
+html[lang="ku"] select,
+html[lang="ku"] textarea,
+html[lang="ku"] .font-sans {
+  font-family: 'Noto Kufi Arabic', system-ui, -apple-system, sans-serif !important;
+}
+
+/* Custom Desktop Native App Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Hide scrollbars cleanly */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0px !important;
+  height: 0px !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  user-select: none;
+  background-color: #0f172a;
+  color: #f8fafc;
+  overflow: hidden;
+}
+
+/* Print thermal receipt & report styles */
+@media print {
+  @page {
+    size: auto;
+    margin: 5mm;
+  }
+
+  html, body, #root {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+  
+  #printable-receipt, #printable-receipt *,
+  #printable-stock-report, #printable-stock-report *,
+  #printable-debtors-report, #printable-debtors-report *,
+  #printable-repayment-receipt, #printable-repayment-receipt *,
+  #printable-supplier-repayment-receipt, #printable-supplier-repayment-receipt *,
+  #printable-purchase-invoice, #printable-purchase-invoice *,
+  #printable-shift-summary, #printable-shift-summary *,
+  #printable-expenses-report, #printable-expenses-report *,
+  #printable-financial-report, #printable-financial-report *,
+  #printable-barcode-sheet, #printable-barcode-sheet *,
+  .printable-area, .printable-area * {
+    visibility: visible !important;
+  }
+
+  #printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    color: #000000 !important;
+    background: #ffffff !important;
+    padding: 4mm !important;
+    font-family: inherit;
+  }
+
+  #printable-stock-report,
+  #printable-debtors-report,
+  #printable-repayment-receipt,
+  #printable-supplier-repayment-receipt,
+  #printable-purchase-invoice,
+  #printable-shift-summary,
+  #printable-expenses-report,
+  #printable-financial-report,
+  #printable-barcode-sheet,
+  .printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
+

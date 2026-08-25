@@ -1,0 +1,8 @@
+{
+  "name": "Remix Baran POS - Printing \u0026 Stationery",
+  "description": "Desktop POS System for Baran Printing \u0026 Stationery Shop owned by Kak Ali Muhammad. Includes full inventory, multi-unit conversions, custom print calculator, debt ledger, shift management, supplier control, expense logging, and thermal receipt printing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
