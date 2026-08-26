@@ -440,10 +440,11 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                   <label className="text-xs font-bold text-slate-700 block">{t('ژمارەی پەیوەندی / واتسئەپ:', 'Phone / WhatsApp:')}</label>
                   <div className="relative">
                     <input
-                      type="text"
+                      type="tel"
+                      inputMode="numeric"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="0750 000 0000"
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                      placeholder="0770 000 0000"
                       className="w-full h-10 bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded-xl px-3.5 text-xs font-mono text-slate-800 outline-none transition-all shadow-2xs"
                       dir="ltr"
                     />

@@ -28,7 +28,8 @@ import {
   Camera,
   Upload,
   Image as ImageIcon,
-  RotateCcw
+  RotateCcw,
+  CreditCard
 } from 'lucide-react';
 import { Product, Category, CartItem, Customer, HeldSale, SalesInvoice, UnitType, User } from '../types';
 import { Currency, formatCurrency, fromBaseIQD, toBaseIQD } from '../utils/currency';
@@ -87,7 +88,7 @@ const PRESET_SAMPLE_IMAGES = [
 
 const getCashierCartKey = (id: string) => `pos_cart_${id}`;
 
-const formatUnitName = (unit?: string, lang: 'ku' | 'en' = 'ku'): string => {
+const formatUnitName = (unit?: string, lang: string = 'ku'): string => {
   if (!unit) return lang === 'ku' ? 'دانە' : 'Piece';
   if (lang === 'ku') {
     const u = String(unit).toLowerCase().trim();
@@ -217,6 +218,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
   const [paymentMethod, setPaymentMethod] = React.useState<'cash' | 'credit'>('cash');
   const [cashTendered, setCashTendered] = React.useState<number>(0);
   const [holdNote, setHoldNote] = React.useState('');
+  const [creditLimitOverrideConfirmed, setCreditLimitOverrideConfirmed] = React.useState(false);
 
   // Searchable Customer Selector Dropdown State
   const [isCustomerSearchOpen, setIsCustomerSearchOpen] = React.useState(false);
@@ -575,6 +577,23 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
       return;
     }
 
+    // Check if customer credit limit is exceeded
+    if (paymentMethod === 'credit' && selectedCustomer && selectedCustomer.creditLimit > 0) {
+      const projectedDebt = selectedCustomer.currentDebt + grandTotal;
+      if (projectedDebt > selectedCustomer.creditLimit && !creditLimitOverrideConfirmed) {
+        const exceededAmount = projectedDebt - selectedCustomer.creditLimit;
+        const confirmMsg =
+          lang === 'ku'
+            ? `⚠️ ئاگاداری سنووری قەرز!\n\nقەرزی ئەم کڕیارە (${selectedCustomer.name}) لە بەرزترین سنووری دیاریکراو تێپەڕ دەبێت:\n\n• بەرزترین سنووری قەرز: ${formatCurrency(selectedCustomer.creditLimit, currency, lang, exchangeRate)}\n• قەرزی پێشوو: ${formatCurrency(selectedCustomer.currentDebt, currency, lang, exchangeRate)}\n• بڕی ئەم کڕینە: ${formatCurrency(grandTotal, currency, lang, exchangeRate)}\n• کۆی گشتی قەرز دەبێتە: ${formatCurrency(projectedDebt, currency, lang, exchangeRate)}\n• بڕی تێپەڕیو لە سنوور: ${formatCurrency(exceededAmount, currency, lang, exchangeRate)}\n\nئایا دڵنیایت کە دەتەوێت سەرەڕای تێپەڕاندنی سنوور، قەرزەکە تۆمار بکەیت؟`
+            : `⚠️ Credit Limit Exceeded Warning!\n\nThis sale exceeds the maximum allowed credit limit for customer (${selectedCustomer.name}):\n\n• Credit Limit: ${formatCurrency(selectedCustomer.creditLimit, currency, lang, exchangeRate)}\n• Current Debt: ${formatCurrency(selectedCustomer.currentDebt, currency, lang, exchangeRate)}\n• Sale Amount: ${formatCurrency(grandTotal, currency, lang, exchangeRate)}\n• Total Projected Debt: ${formatCurrency(projectedDebt, currency, lang, exchangeRate)}\n• Exceeded By: ${formatCurrency(exceededAmount, currency, lang, exchangeRate)}\n\nDo you want to authorize this credit sale anyway?`;
+
+        const userConfirmed = window.confirm(confirmMsg);
+        if (!userConfirmed) {
+          return;
+        }
+      }
+    }
+
     // Check if any cart item exceeds available stock
     const invalidItem = cartItems.find((item) => item.quantity > item.product.stockQuantity);
     if (invalidItem) {
@@ -608,6 +627,53 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
       amountPaid,
       changeDue,
       debtAdded,
+      shiftId,
+      status: 'completed',
+    };
+
+    onCompleteSale(invoice);
+    setIsPayModalOpen(false);
+    setCartItems([]);
+    try {
+      localStorage.removeItem(getCashierCartKey(activeCashierId));
+    } catch {}
+    setCashTendered(0);
+    setDiscountValue(0);
+  };
+
+  // Instant 1-Click Cash Sale (for Walk-in or Selected Customer)
+  const handleQuickCashCheckout = () => {
+    if (cartItems.length === 0) return;
+
+    // Check if any cart item exceeds available stock
+    const invalidItem = cartItems.find((item) => item.quantity > item.product.stockQuantity);
+    if (invalidItem) {
+      setStockAlert({
+        isOpen: true,
+        productName: lang === 'ku' ? (invalidItem.product.nameKu || invalidItem.product.name) : invalidItem.product.name,
+        requestedQty: invalidItem.quantity,
+        availableStock: invalidItem.product.stockQuantity,
+      });
+      return;
+    }
+
+    const invoice: SalesInvoice = {
+      id: `inv_${Date.now()}`,
+      invoiceNumber: `INV-${Math.floor(1000 + Math.random() * 9000)}`,
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      cashierId,
+      cashierName,
+      customerId: selectedCustomer?.id,
+      customerName: selectedCustomer ? selectedCustomer.name : 'Walk-in Customer',
+      items: cartItems,
+      subtotal,
+      discountTotal: globalDiscountAmount,
+      grandTotal,
+      paymentMethod: 'cash',
+      amountPaid: grandTotal,
+      changeDue: 0,
+      debtAdded: 0,
       shiftId,
       status: 'completed',
     };
@@ -1218,10 +1284,12 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                 className={`w-full flex items-center justify-between gap-2 bg-white px-3 py-2 border rounded-none text-start text-xs cursor-pointer transition-all ${
                   isCustomerSearchOpen
                     ? 'border-black ring-1 ring-black bg-zinc-50'
+                    : selectedCustomer && selectedCustomerId !== 'walk_in' && selectedCustomer.creditLimit > 0 && (selectedCustomer.currentDebt >= selectedCustomer.creditLimit || selectedCustomer.currentDebt + grandTotal > selectedCustomer.creditLimit)
+                    ? 'border-rose-600 bg-rose-50/70'
                     : 'border-zinc-300 hover:border-zinc-400'
                 }`}
               >
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center gap-1.5 min-w-0 flex-1 flex-wrap">
                   <UserIcon className="w-4 h-4 text-zinc-600 shrink-0" />
                   <span className="font-bold text-zinc-900 truncate">
                     {selectedCustomerId === 'walk_in'
@@ -1230,8 +1298,22 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                   </span>
                   {selectedCustomer && selectedCustomer.currentDebt > 0 && (
                     <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 bg-rose-50 text-rose-700 border border-rose-200 shrink-0">
+                      {lang === 'ku' ? 'قەرز: ' : 'Debt: '}
                       {formatCurrency(selectedCustomer.currentDebt, currency, lang, exchangeRate)}
                     </span>
+                  )}
+                  {selectedCustomer && selectedCustomerId !== 'walk_in' && selectedCustomer.creditLimit > 0 && (
+                    selectedCustomer.currentDebt >= selectedCustomer.creditLimit || selectedCustomer.currentDebt + grandTotal > selectedCustomer.creditLimit ? (
+                      <span className="text-[9px] font-mono font-black px-1.5 py-0.5 bg-rose-700 text-white shrink-0">
+                        {lang === 'ku' ? '⚠️ تێپەڕاندنی سنووری قەرز' : '⚠️ Exceeding Credit Limit'}
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-mono font-bold text-zinc-600 shrink-0">
+                        {lang === 'ku'
+                          ? `(سنوور: ${formatCurrency(selectedCustomer.creditLimit, currency, lang, exchangeRate)})`
+                          : `(Limit: ${formatCurrency(selectedCustomer.creditLimit, currency, lang, exchangeRate)})`}
+                      </span>
+                    )
                   )}
                 </div>
                 <Search className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
@@ -1292,31 +1374,63 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                         </div>
                       )}
 
-                      {/* Registered Customers - Name & Debt Only */}
-                      {filteredCustomerList.map((c) => (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedCustomerId(c.id);
-                            setIsCustomerSearchOpen(false);
-                            setCustomerSearchQuery('');
-                          }}
-                          className={`w-full py-2.5 px-3 text-start flex items-center justify-between gap-3 hover:bg-zinc-100 rounded-none transition-colors cursor-pointer border-b border-zinc-100 ${
-                            selectedCustomerId === c.id ? 'bg-zinc-100 font-black text-black' : 'bg-white text-zinc-800'
-                          }`}
-                        >
-                          <span className="font-bold text-xs text-zinc-900 truncate">
-                            {c.name}
-                          </span>
+                      {/* Registered Customers - Name, Phone, Debt & Credit Limit */}
+                      {filteredCustomerList.map((c) => {
+                        const isOverLimit = c.creditLimit > 0 && (c.currentDebt >= c.creditLimit || (selectedCustomerId === c.id && c.currentDebt + grandTotal > c.creditLimit));
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCustomerId(c.id);
+                              setIsCustomerSearchOpen(false);
+                              setCustomerSearchQuery('');
+                            }}
+                            className={`w-full py-2.5 px-3 text-start flex items-center justify-between gap-3 hover:bg-zinc-100 rounded-none transition-colors cursor-pointer border-b border-zinc-100 ${
+                              selectedCustomerId === c.id
+                                ? 'bg-zinc-100 font-black text-black'
+                                : isOverLimit
+                                ? 'bg-rose-50/60 hover:bg-rose-100/80 text-zinc-900'
+                                : 'bg-white text-zinc-800'
+                            }`}
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-xs text-zinc-900 truncate">
+                                  {c.name}
+                                </span>
+                                {isOverLimit && (
+                                  <span className="text-[9px] font-mono font-black bg-rose-700 text-white px-1.5 py-0.5 rounded-none shrink-0 border border-rose-800">
+                                    {lang === 'ku' ? '⚠️ تێپەڕاندنی سنوور' : '⚠️ Over Limit'}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[10px] text-zinc-500 font-mono flex items-center gap-2 mt-0.5">
+                                <span>{c.phone || '-'}</span>
+                                {c.creditLimit > 0 && (
+                                  <span className="text-zinc-600">
+                                    {lang === 'ku'
+                                      ? `بەرزترین سنوور: ${formatCurrency(c.creditLimit, currency, lang, exchangeRate)}`
+                                      : `Limit: ${formatCurrency(c.creditLimit, currency, lang, exchangeRate)}`}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
 
-                          {c.currentDebt > 0 && (
-                            <span className="text-xs font-mono font-black text-rose-700 shrink-0">
-                              {formatCurrency(c.currentDebt, currency, lang, exchangeRate)}
-                            </span>
-                          )}
-                        </button>
-                      ))}
+                            <div className="text-end shrink-0 font-mono">
+                              {c.currentDebt > 0 ? (
+                                <span className="text-xs font-black text-rose-700 block">
+                                  {formatCurrency(c.currentDebt, currency, lang, exchangeRate)}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-emerald-700 font-bold block">
+                                  {lang === 'ku' ? 'بێ قەرز' : 'No Debt'}
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
 
                       {filteredCustomerList.length === 0 && (
                         <div className="p-4 text-center text-zinc-400 text-[11px] font-bold uppercase">
@@ -1355,6 +1469,41 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
               </button>
             )}
           </div>
+
+          {/* Over Credit Limit Warning Banner for Selected Customer */}
+          {selectedCustomer && selectedCustomerId !== 'walk_in' && selectedCustomer.creditLimit > 0 && (selectedCustomer.currentDebt >= selectedCustomer.creditLimit || selectedCustomer.currentDebt + grandTotal > selectedCustomer.creditLimit) && (
+            <div className="bg-rose-950/95 border border-rose-600 text-rose-100 p-2.5 space-y-1.5 rounded-none font-sans text-xs shadow-2xs">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 font-bold text-rose-200">
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span>{lang === 'ku' ? 'ئاگاداری: ئەم کڕیارە سنووری قەرزی تێپەڕاندووە' : 'Warning: Customer Exceeded Credit Limit'}</span>
+                </div>
+                <span className="text-[10px] font-mono font-black px-1.5 py-0.5 bg-rose-900 text-rose-200 border border-rose-700 shrink-0">
+                  {lang === 'ku' ? 'تێپەڕیوە بە: ' : 'Excess: '}
+                  +{formatCurrency(Math.max(0, (selectedCustomer.currentDebt + grandTotal) - selectedCustomer.creditLimit), currency, lang, exchangeRate)}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-rose-800/80 text-[10px] font-mono">
+                <div className="bg-rose-900/40 p-1 px-1.5 border border-rose-800/60">
+                  <span className="text-rose-400 font-sans block text-[9px]">{lang === 'ku' ? 'بەرزترین سنوور' : 'Credit Limit'}</span>
+                  <span className="font-bold text-rose-100">{formatCurrency(selectedCustomer.creditLimit, currency, lang, exchangeRate)}</span>
+                </div>
+                <div className="bg-rose-900/40 p-1 px-1.5 border border-rose-800/60">
+                  <span className="text-rose-400 font-sans block text-[9px]">{lang === 'ku' ? 'قەرزی پێشوو' : 'Current Debt'}</span>
+                  <span className="font-bold text-rose-100">{formatCurrency(selectedCustomer.currentDebt, currency, lang, exchangeRate)}</span>
+                </div>
+                <div className="bg-rose-900/40 p-1 px-1.5 border border-rose-800/60">
+                  <span className="text-rose-400 font-sans block text-[9px]">{lang === 'ku' ? 'کۆی نوێ بەم کڕینەوە' : 'New Total Debt'}</span>
+                  <span className="font-black text-white">{formatCurrency(selectedCustomer.currentDebt + grandTotal, currency, lang, exchangeRate)}</span>
+                </div>
+              </div>
+              <div className="text-[10px] text-rose-200/90 font-sans pt-0.5 border-t border-rose-800/50">
+                {lang === 'ku'
+                  ? '💡 تێبینی: دەتوانیت بە نەقد (کاش) کاڵاکانی پێبفرۆشیت بەبێ ئەوەی قەرزی لەسەر زیاد بێت.'
+                  : '💡 Note: You can complete this sale in cash without increasing customer debt.'}
+              </div>
+            </div>
+          )}
 
           {/* Pricing Tier Toggle (Retail vs Wholesale) */}
           <div className="flex justify-between items-center bg-white p-1 border border-zinc-300 font-mono">
@@ -1777,30 +1926,76 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
             </button>
           </div>
 
-          {/* Pay Button */}
-          <button
-            onClick={() => {
-              setCashTendered(grandTotal);
-              setIsPayModalOpen(true);
-            }}
-            disabled={cartItems.length === 0}
-            className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-black uppercase text-sm tracking-widest transition-colors rounded-none shadow-none flex items-center justify-center gap-2"
-          >
-            <Coins className="w-5 h-5" />
-            {lang === 'ku' ? 'ئەنجامدانی پارەدان' : 'Process Payment'}
-          </button>
+          {/* Payment Action Buttons */}
+          <div className="space-y-2">
+            {/* Primary Direct Cash Sale Button */}
+            <button
+              onClick={handleQuickCashCheckout}
+              disabled={cartItems.length === 0}
+              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-black uppercase text-xs tracking-wider transition-colors rounded-none shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+            >
+              <Coins className="w-4 h-4" />
+              <span>
+                {selectedCustomer && selectedCustomerId !== 'walk_in'
+                  ? (lang === 'ku' ? `فرۆشتنی نەقد (کاش) بۆ ${selectedCustomer.name}` : `Cash Sale to ${selectedCustomer.name}`)
+                  : (lang === 'ku' ? 'فرۆشتنی نەقد (کاش)' : 'Quick Cash Sale')}
+              </span>
+            </button>
+
+            {/* Split row: Credit Sale & Detailed Modal */}
+            <div className="grid grid-cols-2 gap-2">
+              {/* Credit Sale Button */}
+              {selectedCustomer && selectedCustomerId !== 'walk_in' ? (
+                <button
+                  onClick={() => {
+                    setPaymentMethod('credit');
+                    setCreditLimitOverrideConfirmed(false);
+                    setIsPayModalOpen(true);
+                  }}
+                  disabled={cartItems.length === 0}
+                  className="py-2.5 bg-rose-700 hover:bg-rose-800 disabled:opacity-50 text-white font-bold text-xs transition-colors rounded-none flex items-center justify-center gap-1.5 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>{lang === 'ku' ? 'فرۆشتن بە قەرز' : 'Sell on Credit'}</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsCustomerSearchOpen(true)}
+                  disabled={cartItems.length === 0}
+                  className="py-2.5 bg-zinc-100 hover:bg-zinc-200 disabled:opacity-50 text-zinc-700 border border-zinc-300 font-bold text-xs transition-colors rounded-none flex items-center justify-center gap-1.5 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  <UserIcon className="w-3.5 h-3.5 text-zinc-500" />
+                  <span>{lang === 'ku' ? 'دیاریکردنی کڕیار بۆ قەرز' : 'Select for Credit'}</span>
+                </button>
+              )}
+
+              {/* Detailed Payment Modal Button */}
+              <button
+                onClick={() => {
+                  setPaymentMethod('cash');
+                  setCashTendered(grandTotal);
+                  setIsPayModalOpen(true);
+                }}
+                disabled={cartItems.length === 0}
+                className="py-2.5 bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 text-white font-bold text-xs transition-colors rounded-none flex items-center justify-center gap-1.5 cursor-pointer disabled:cursor-not-allowed"
+              >
+                <Tag className="w-3.5 h-3.5 text-zinc-400" />
+                <span>{lang === 'ku' ? 'شێوازی تر / بەشەکی' : 'Custom / Change'}</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Payment Modal */}
       {isPayModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white border border-zinc-300 w-full max-w-md p-6 space-y-5 shadow-2xl text-zinc-900 rounded-none">
+          <div className="bg-white border border-zinc-300 w-full max-w-md p-6 space-y-5 shadow-2xl text-zinc-900 rounded-none font-sans">
             <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
-              <h3 className="font-black text-sm uppercase tracking-wider text-zinc-900">
+              <h3 className="font-black text-xs uppercase tracking-wider text-zinc-900">
                 {lang === 'ku' ? 'پارەدانی فاکتۆر' : 'Checkout Payment'}
               </h3>
-              <button onClick={() => setIsPayModalOpen(false)} className="text-zinc-500 hover:text-black">
+              <button onClick={() => setIsPayModalOpen(false)} className="text-zinc-500 hover:text-black cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1808,28 +2003,43 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
             <div className="space-y-4 font-mono text-xs">
               {/* Payment Mode Selector: Cash vs Debt */}
               <div>
-                <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">
+                <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1 font-sans">
                   {lang === 'ku' ? 'ڕێگەی پارەدان' : 'Payment Method'}
                 </label>
                 <div className="flex bg-zinc-100 p-1 border border-zinc-300 rounded-none">
                   <button
                     onClick={() => setPaymentMethod('cash')}
-                    className={`flex-1 py-2 font-bold uppercase rounded-none ${
-                      paymentMethod === 'cash' ? 'bg-emerald-600 text-white' : 'text-zinc-600'
+                    className={`flex-1 py-2 font-bold uppercase rounded-none cursor-pointer transition-colors ${
+                      paymentMethod === 'cash' ? 'bg-emerald-600 text-white' : 'text-zinc-600 hover:bg-zinc-200'
                     }`}
                   >
                     {lang === 'ku' ? 'کاش (نەقد)' : 'Cash'}
                   </button>
                   <button
                     onClick={() => setPaymentMethod('credit')}
-                    className={`flex-1 py-2 font-bold uppercase rounded-none ${
-                      paymentMethod === 'credit' ? 'bg-rose-600 text-white' : 'text-zinc-600'
+                    className={`flex-1 py-2 font-bold uppercase rounded-none cursor-pointer transition-colors ${
+                      paymentMethod === 'credit' ? 'bg-rose-600 text-white' : 'text-zinc-600 hover:bg-zinc-200'
                     }`}
                   >
                     {lang === 'ku' ? 'قەرزی کڕیار' : 'Customer Debt'}
                   </button>
                 </div>
               </div>
+
+              {/* Customer Info Pill in Modal */}
+              {selectedCustomer && selectedCustomerId !== 'walk_in' && (
+                paymentMethod === 'cash' ? (
+                  <div className="bg-emerald-50 border border-emerald-200 p-2.5 flex items-center justify-between text-emerald-900 text-xs rounded-none font-sans">
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <UserIcon className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                      <span>{lang === 'ku' ? `کڕیار: ${selectedCustomer.name}` : `Customer: ${selectedCustomer.name}`}</span>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 border border-emerald-200 shrink-0">
+                      {lang === 'ku' ? 'پارەدانی نەقد (بێ قەرز)' : 'Cash Payment (No Debt)'}
+                    </span>
+                  </div>
+                ) : null
+              )}
 
               {/* Total Due Badge */}
               <div className="bg-zinc-50 p-4 border border-zinc-200 flex justify-between items-center rounded-none">
@@ -1880,35 +2090,138 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className={`p-4 space-y-1.5 rounded-none border ${
-                  !selectedCustomer || selectedCustomerId === 'walk_in'
-                    ? 'bg-rose-50 border-rose-300 text-rose-900'
-                    : 'bg-zinc-50 border-zinc-300 text-zinc-900'
-                }`}>
-                  <div className="font-black uppercase text-xs flex items-center gap-1.5">
-                    {!selectedCustomer || selectedCustomerId === 'walk_in' ? (
-                      <>
-                        <AlertTriangle className="w-4 h-4 text-rose-600" />
+                <div className="space-y-3 font-sans">
+                  {!selectedCustomer || selectedCustomerId === 'walk_in' ? (
+                    <div className="p-4 space-y-1.5 rounded-none border bg-rose-50 border-rose-300 text-rose-900">
+                      <div className="font-black uppercase text-xs flex items-center gap-1.5">
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                         <span className="text-rose-700">{lang === 'ku' ? 'ڕێگەپێنەدراوە: کڕیار تۆمار نەکراوە!' : 'Forbidden: No registered customer!'}</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        <span>{lang === 'ku' ? 'تۆماری هەژماری قەرز' : 'Debt Account Record'}</span>
-                      </>
-                    )}
-                  </div>
-                  <p className="text-[11px] font-sans">
-                    {lang === 'ku' ? 'کڕیار:' : 'Customer:'}{' '}
-                    <span className="font-bold">
-                      {selectedCustomer ? selectedCustomer.name : (lang === 'ku' ? 'کڕیاری گشتی (تۆمارنەکراو)' : 'Walk-in Retail (Unregistered)')}
-                    </span>
-                  </p>
-                  <p className="text-[10px] text-zinc-600">
-                    {!selectedCustomer || selectedCustomerId === 'walk_in'
-                      ? (lang === 'ku' ? 'تکایە سەرەتا کڕیارێکی تۆمارکراو لە سەرەوە هەڵبژێرە. فرۆشتن بە قەرز بۆ کڕیاری گشتی نابێت.' : 'Please select a registered customer first. Debt sales are strictly restricted to registered customers.')
-                      : (lang === 'ku' ? 'کۆی بەهاکە دەچێتە سەر هەژماری قەرزی ئەم کڕیارە.' : 'Grand total will be added to this customer debt balance.')}
-                  </p>
+                      </div>
+                      <p className="text-[11px]">
+                        {lang === 'ku'
+                          ? 'تکایە سەرەتا کڕیارێکی تۆمارکراو لە سەرەوە هەڵبژێرە. فرۆشتن بە قەرز بۆ کڕیاری گشتی نابێت.'
+                          : 'Please select a registered customer first. Debt sales are strictly restricted to registered customers.'}
+                      </p>
+                    </div>
+                  ) : (
+                    (() => {
+                      const projDebt = selectedCustomer.currentDebt + grandTotal;
+                      const cLimit = selectedCustomer.creditLimit || 0;
+                      const isBreached = cLimit > 0 && projDebt > cLimit;
+                      const excess = Math.max(0, projDebt - cLimit);
+                      const remainingAfter = Math.max(0, cLimit - projDebt);
+
+                      return (
+                        <div className="space-y-2.5">
+                          {/* Customer Debt Status Card */}
+                          <div className="bg-zinc-50 border border-zinc-300 p-3.5 space-y-2 rounded-none">
+                            <div className="flex justify-between items-center border-b border-zinc-200 pb-2">
+                              <div className="flex items-center gap-1.5">
+                                <UserIcon className="w-4 h-4 text-zinc-700" />
+                                <span className="font-extrabold text-xs text-zinc-900">{selectedCustomer.name}</span>
+                              </div>
+                              <span className="text-[10px] font-mono text-zinc-500">{selectedCustomer.phone || '-'}</span>
+                            </div>
+
+                            {/* 4 Metrics Grid */}
+                            <div className="grid grid-cols-2 gap-2 text-xs font-mono pt-1">
+                              <div className="bg-white p-2 border border-zinc-200">
+                                <span className="text-[9px] uppercase font-bold text-zinc-500 block font-sans">
+                                  {lang === 'ku' ? 'بەرزترین سنووری قەرز' : 'Credit Limit'}
+                                </span>
+                                <span className="font-extrabold text-zinc-900 text-xs">
+                                  {formatCurrency(cLimit, currency, lang, exchangeRate)}
+                                </span>
+                              </div>
+
+                              <div className="bg-white p-2 border border-zinc-200">
+                                <span className="text-[9px] uppercase font-bold text-zinc-500 block font-sans">
+                                  {lang === 'ku' ? 'قەرزی پێشوو' : 'Current Debt'}
+                                </span>
+                                <span className="font-extrabold text-rose-700 text-xs">
+                                  {formatCurrency(selectedCustomer.currentDebt, currency, lang, exchangeRate)}
+                                </span>
+                              </div>
+
+                              <div className="bg-white p-2 border border-zinc-200">
+                                <span className="text-[9px] uppercase font-bold text-zinc-500 block font-sans">
+                                  {lang === 'ku' ? 'قەرزی ئەم کڕینە' : 'This Sale Debt'}
+                                </span>
+                                <span className="font-extrabold text-blue-600 text-xs">
+                                  +{formatCurrency(grandTotal, currency, lang, exchangeRate)}
+                                </span>
+                              </div>
+
+                              <div className={`p-2 border ${isBreached ? 'bg-rose-100/70 border-rose-300' : 'bg-white border-zinc-200'}`}>
+                                <span className="text-[9px] uppercase font-bold text-zinc-500 block font-sans">
+                                  {lang === 'ku' ? 'کۆی قەرزی نوێ' : 'New Total Debt'}
+                                </span>
+                                <span className={`font-black text-xs ${isBreached ? 'text-rose-800' : 'text-zinc-900'}`}>
+                                  {formatCurrency(projDebt, currency, lang, exchangeRate)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Limit Breach Alert Banner */}
+                          {isBreached ? (
+                            <div className="p-3 bg-rose-50 border-2 border-rose-600 text-rose-950 space-y-2 rounded-none shadow-xs animate-in fade-in duration-200">
+                              <div className="flex items-start gap-2">
+                                <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                                <div className="space-y-1">
+                                  <h4 className="font-black text-xs text-rose-900">
+                                    {lang === 'ku'
+                                      ? 'ئاگاداری: ئەم کڕینە لە بەرزترین سنووری قەرز تێپەڕ دەبێت!'
+                                      : 'Warning: This sale exceeds the customer credit limit!'}
+                                  </h4>
+                                  <p className="text-[11px] text-rose-800 leading-snug">
+                                    {lang === 'ku' ? (
+                                      <>
+                                        بڕی تێپەڕیو لە سنوور:{' '}
+                                        <span className="font-mono font-black text-rose-950 bg-rose-200/80 px-1 py-0.2">
+                                          {formatCurrency(excess, currency, lang, exchangeRate)}
+                                        </span>{' '}
+                                        (سنوورەکەی {formatCurrency(cLimit, currency, lang, exchangeRate)} بوو، قەرزی کۆتایی دەبێتە {formatCurrency(projDebt, currency, lang, exchangeRate)}).
+                                      </>
+                                    ) : (
+                                      <>
+                                        Exceeded limit by:{' '}
+                                        <span className="font-mono font-black text-rose-950 bg-rose-200/80 px-1 py-0.2">
+                                          {formatCurrency(excess, currency, lang, exchangeRate)}
+                                        </span>{' '}
+                                        (Limit is {formatCurrency(cLimit, currency, lang, exchangeRate)}, new debt will be {formatCurrency(projDebt, currency, lang, exchangeRate)}).
+                                      </>
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <label className="flex items-center gap-2 pt-1 border-t border-rose-200 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={creditLimitOverrideConfirmed}
+                                  onChange={(e) => setCreditLimitOverrideConfirmed(e.target.checked)}
+                                  className="w-4 h-4 text-rose-600 focus:ring-rose-500 rounded-none cursor-pointer"
+                                />
+                                <span className="text-[11px] font-bold text-rose-900">
+                                  {lang === 'ku'
+                                    ? 'ڕێگەدان بە تێپەڕاندنی بەرزترین سنووری قەرز بۆ ئەم پسوڵەیە'
+                                    : 'Authorize credit limit override for this invoice'}
+                                </span>
+                              </label>
+                            </div>
+                          ) : (
+                            <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] flex justify-between items-center rounded-none font-bold">
+                              <span>{lang === 'ku' ? 'ماوەی بەردەست لە سنووری قەرز:' : 'Remaining credit available:'}</span>
+                              <span className="font-mono font-black text-emerald-900">
+                                {formatCurrency(remainingAfter, currency, lang, exchangeRate)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()
+                  )}
                 </div>
               )}
 
@@ -1922,9 +2235,13 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                 </button>
                 <button
                   onClick={handleFinalizePayment}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black uppercase text-xs tracking-wider rounded-none"
+                  className={`px-5 py-2.5 text-white font-black uppercase text-xs tracking-wider rounded-none cursor-pointer transition-colors ${
+                    paymentMethod === 'cash' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'
+                  }`}
                 >
-                  {lang === 'ku' ? 'تەواوکردن و چاپی وەصڵ' : 'Complete & Print Receipt'}
+                  {paymentMethod === 'cash'
+                    ? (lang === 'ku' ? 'تەواوکردنی فرۆشتنی نەقد و چاپ' : 'Complete Cash Sale & Print')
+                    : (lang === 'ku' ? 'تەواوکردنی فرۆشتن بە قەرز و چاپ' : 'Complete Credit Sale & Print')}
                 </button>
               </div>
             </div>

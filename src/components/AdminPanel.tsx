@@ -360,11 +360,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 block">{t('ژمارەی مۆبایل:', 'Phone:')}</label>
                   <input
-                    type="text"
+                    type="tel"
+                    inputMode="numeric"
                     dir="ltr"
-                    placeholder="0750 000 0000"
+                    placeholder="0770 000 0000"
                     value={newUser.phone}
-                    onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                    onChange={(e) => setNewUser({ ...newUser, phone: e.target.value.replace(/\D/g, '') })}
                     className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-xs font-mono font-bold outline-none focus:border-indigo-500"
                   />
                 </div>
@@ -489,10 +490,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700 block">{t('ژمارەی مۆبایل:', 'Phone:')}</label>
                   <input
-                    type="text"
+                    type="tel"
+                    inputMode="numeric"
                     dir="ltr"
+                    placeholder="0770 000 0000"
                     value={editingUser.phone}
-                    onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
+                    onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value.replace(/\D/g, '') })}
                     className="w-full h-10 bg-white border border-slate-200 rounded-xl px-3 text-xs font-mono font-bold outline-none focus:border-indigo-500"
                   />
                 </div>

@@ -25,6 +25,9 @@ import {
   ShoppingBag,
   TrendingDown,
   ArrowDownRight,
+  Store,
+  MapPin,
+  Phone,
 } from 'lucide-react';
 import { Product, Category, SystemConfig } from '../types';
 import { Currency, formatCurrency } from '../utils/currency';
@@ -139,8 +142,8 @@ export const DiscountsManager: React.FC<DiscountsManagerProps> = ({
 
   // KPIs Calculations
   const activeProducts = products.filter((p) => p.isActive);
-  const discountedProductsList = activeProducts.filter((p) => p.promotionDiscount && p.promotionDiscount > 0);
-  const timedOffersList = discountedProductsList.filter((p) => p.promotionEnd);
+  const discountedProductsList = activeProducts.filter((p) => Boolean(p.promotionDiscount && p.promotionDiscount > 0));
+  const timedOffersList = discountedProductsList.filter((p) => Boolean(p.promotionEnd));
   
   const avgDiscount = discountedProductsList.length > 0
     ? Math.round(discountedProductsList.reduce((sum, p) => sum + (p.promotionDiscount || 0), 0) / discountedProductsList.length)
@@ -149,8 +152,8 @@ export const DiscountsManager: React.FC<DiscountsManagerProps> = ({
   // Filtered products list
   const filteredProducts = activeProducts
     .filter((p) => {
-      if (activeTab === 'discounted') return p.promotionDiscount && p.promotionDiscount > 0;
-      if (activeTab === 'timed') return p.promotionDiscount && p.promotionDiscount > 0 && p.promotionEnd;
+      if (activeTab === 'discounted') return Boolean(p.promotionDiscount && p.promotionDiscount > 0);
+      if (activeTab === 'timed') return Boolean(p.promotionDiscount && p.promotionDiscount > 0 && p.promotionEnd);
       return true;
     })
     .filter((p) => {
@@ -246,7 +249,7 @@ export const DiscountsManager: React.FC<DiscountsManagerProps> = ({
     selectedProducts.forEach((p) => {
       onUpdateProduct({
         ...p,
-        promotionDiscount: 0,
+        promotionDiscount: undefined,
         promotionEnd: undefined,
         promotionLimit: undefined,
       });
@@ -260,7 +263,7 @@ export const DiscountsManager: React.FC<DiscountsManagerProps> = ({
   const removeDiscount = (product: Product) => {
     onUpdateProduct({
       ...product,
-      promotionDiscount: 0,
+      promotionDiscount: undefined,
       promotionEnd: undefined,
       promotionLimit: undefined,
     });
@@ -280,7 +283,7 @@ export const DiscountsManager: React.FC<DiscountsManagerProps> = ({
     if (!ctx) return;
 
     const storeName = systemConfig?.shopNameKu || systemConfig?.shopNameEn || 'پەراوگەی باران';
-    const phone = systemConfig?.phone || '0750 000 0000';
+    const phone = systemConfig?.phone || '0770 000 0000';
     const address = systemConfig?.address || 'سلێمانی - شەقامی سەرەکی';
     const pName = lang === 'ku' ? product.nameKu || product.name : product.name;
     const discountedPrice = product.promotionDiscount
@@ -291,95 +294,89 @@ export const DiscountsManager: React.FC<DiscountsManagerProps> = ({
     if (posterTheme === 'clean_studio') {
       const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
       bgGrad.addColorStop(0, '#ffffff');
+      bgGrad.addColorStop(0.6, '#f8fafc');
       bgGrad.addColorStop(1, '#f1f5f9');
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, width, height);
 
-      ctx.strokeStyle = 'rgba(99, 102, 241, 0.06)';
-      ctx.lineWidth = 140;
-      ctx.beginPath();
-      ctx.arc(width / 2, height * 0.4, isStory ? 550 : 420, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.07)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(30, 30, width - 60, height - 60);
     } else if (posterTheme === 'vibrant_crimson') {
       const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
-      bgGrad.addColorStop(0, '#e1144a');
-      bgGrad.addColorStop(0.45, '#9f1239');
-      bgGrad.addColorStop(1, '#4c0519');
+      bgGrad.addColorStop(0, '#500724');
+      bgGrad.addColorStop(0.5, '#881337');
+      bgGrad.addColorStop(1, '#360210');
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, width, height);
 
-      const radGrad = ctx.createRadialGradient(width / 2, height * 0.35, 50, width / 2, height * 0.35, 600);
-      radGrad.addColorStop(0, 'rgba(251, 113, 133, 0.3)');
+      const radGrad = ctx.createRadialGradient(width / 2, height * 0.35, 40, width / 2, height * 0.35, isStory ? 700 : 500);
+      radGrad.addColorStop(0, 'rgba(244, 63, 94, 0.22)');
       radGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = radGrad;
       ctx.fillRect(0, 0, width, height);
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(30, 30, width - 60, height - 60);
     } else {
-      // Dark Luxury Midnight (Default)
+      // Dark Luxury Obsidian (Default)
       const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
-      bgGrad.addColorStop(0, '#090d16');
-      bgGrad.addColorStop(0.45, '#0f172a');
-      bgGrad.addColorStop(1, '#1e1b4b');
+      bgGrad.addColorStop(0, '#090a0f');
+      bgGrad.addColorStop(0.45, '#10121a');
+      bgGrad.addColorStop(1, '#161922');
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, width, height);
 
-      const radGrad = ctx.createRadialGradient(width / 2, height * 0.35, 50, width / 2, height * 0.35, 600);
-      radGrad.addColorStop(0, 'rgba(99, 102, 241, 0.22)');
+      const radGrad = ctx.createRadialGradient(width / 2, height * 0.35, 30, width / 2, height * 0.35, isStory ? 700 : 500);
+      radGrad.addColorStop(0, 'rgba(255, 255, 255, 0.05)');
       radGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = radGrad;
       ctx.fillRect(0, 0, width, height);
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.09)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(30, 30, width - 60, height - 60);
     }
 
-    ctx.strokeStyle = posterTheme === 'clean_studio' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)';
-    ctx.lineWidth = 4;
-    ctx.strokeRect(30, 30, width - 60, height - 60);
+    // 2. Centered Minimal Store Name Header
+    const topY = isStory ? 90 : 60;
+    const storeBadgeW = isStory ? 440 : 400;
+    const storeBadgeH = 50;
+    const storeBadgeX = (width - storeBadgeW) / 2;
 
-    // 2. Top Header Bar
-    const topY = isStory ? 100 : 70;
+    ctx.fillStyle = posterTheme === 'clean_studio'
+      ? '#f4f4f5'
+      : posterTheme === 'vibrant_crimson'
+      ? 'rgba(0, 0, 0, 0.25)'
+      : 'rgba(255, 255, 255, 0.06)';
+    ctx.fillRect(storeBadgeX, topY, storeBadgeW, storeBadgeH);
+    ctx.strokeStyle = posterTheme === 'clean_studio' ? '#e4e4e7' : 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(storeBadgeX, topY, storeBadgeW, storeBadgeH);
 
-    // Special Offer Tag
-    ctx.fillStyle = posterTheme === 'clean_studio' ? '#ef4444' : '#f59e0b';
-    ctx.beginPath();
-    ctx.roundRect(isStory ? 60 : 70, topY, isStory ? 260 : 280, 56, 12);
-    ctx.fill();
-    ctx.fillStyle = posterTheme === 'clean_studio' ? '#ffffff' : '#0f172a';
-    ctx.font = 'bold 24px Arial, sans-serif';
+    ctx.fillStyle = posterTheme === 'clean_studio' ? '#18181b' : '#ffffff';
+    ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🔥 ئۆفەری تایبەت', (isStory ? 60 : 70) + (isStory ? 130 : 140), topY + 37);
-
-    // Store Name Badge
-    ctx.fillStyle = posterTheme === 'clean_studio' ? '#ffffff' : 'rgba(255, 255, 255, 0.12)';
-    ctx.beginPath();
-    const storeBadgeW = isStory ? 340 : 380;
-    const storeBadgeX = width - (isStory ? 60 : 70) - storeBadgeW;
-    ctx.roundRect(storeBadgeX, topY, storeBadgeW, 56, 12);
-    ctx.fill();
-    ctx.strokeStyle = posterTheme === 'clean_studio' ? 'rgba(0,0,0,0.1)' : 'rgba(255, 255, 255, 0.25)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fillStyle = posterTheme === 'clean_studio' ? '#0f172a' : '#ffffff';
-    ctx.font = 'bold 24px Arial, sans-serif';
-    ctx.fillText(`✨ ${storeName}`, storeBadgeX + storeBadgeW / 2, topY + 37);
+    ctx.fillText(storeName, width / 2, topY + 33);
 
     // 3. Product Image Showcase Box
-    const imgSize = isStory ? 520 : 460;
+    const imgSize = isStory ? 560 : 480;
     const imgX = (width - imgSize) / 2;
-    const imgY = isStory ? 240 : 170;
+    const imgY = isStory ? 220 : 155;
 
+    // Clean Studio White Canvas Container
     ctx.save();
-    ctx.shadowColor = posterTheme === 'clean_studio' ? 'rgba(0, 0, 0, 0.15)' : 'rgba(0, 0, 0, 0.6)';
-    ctx.shadowBlur = 35;
-    ctx.shadowOffsetY = 15;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+    ctx.shadowBlur = 30;
+    ctx.shadowOffsetY = 12;
     ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.roundRect(imgX, imgY, imgSize, imgSize, 24);
-    ctx.fill();
+    ctx.fillRect(imgX, imgY, imgSize, imgSize);
     ctx.restore();
 
-    ctx.strokeStyle = posterTheme === 'clean_studio' ? '#e2e8f0' : '#ffffff';
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.roundRect(imgX, imgY, imgSize, imgSize, 24);
-    ctx.stroke();
+    ctx.strokeStyle = posterTheme === 'clean_studio' ? '#e4e4e7' : 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(imgX, imgY, imgSize, imgSize);
 
     const prodImg = new Image();
     prodImg.crossOrigin = 'anonymous';
@@ -387,113 +384,146 @@ export const DiscountsManager: React.FC<DiscountsManagerProps> = ({
     prodImg.src = imgSrc;
 
     const renderRemaining = () => {
+      // Floating Discount Badge on top-left of image
       if (product.promotionDiscount && product.promotionDiscount > 0) {
         ctx.save();
-        ctx.shadowColor = 'rgba(225, 20, 74, 0.5)';
-        ctx.shadowBlur = 20;
         ctx.fillStyle = '#e1144a';
-        ctx.beginPath();
-        ctx.roundRect(imgX - 20, imgY + 25, 140, 56, 16);
-        ctx.fill();
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 3;
-        ctx.stroke();
+        const badgeW = 130;
+        const badgeH = 50;
+        ctx.fillRect(imgX, imgY, badgeW, badgeH);
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'black 28px Arial, sans-serif';
+        ctx.font = '900 24px system-ui, -apple-system, monospace, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`-%${Math.round(product.promotionDiscount)}`, imgX + 50, imgY + 39);
+        ctx.fillText(`-%${Math.round(product.promotionDiscount)}`, imgX + badgeW / 2, imgY + 34);
         ctx.restore();
       }
 
+      // 4. Product Name & Code
       const titleY = imgY + imgSize + (isStory ? 80 : 65);
-      ctx.fillStyle = posterTheme === 'clean_studio' ? '#0f172a' : '#ffffff';
-      ctx.font = 'black 42px Arial, sans-serif';
+      ctx.fillStyle = posterTheme === 'clean_studio' ? '#09090b' : '#ffffff';
+      ctx.font = '900 44px system-ui, -apple-system, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(pName, width / 2, titleY);
 
       if (product.barcode) {
-        ctx.fillStyle = posterTheme === 'clean_studio' ? '#64748b' : 'rgba(255, 255, 255, 0.6)';
+        ctx.fillStyle = posterTheme === 'clean_studio' ? '#71717a' : '#a1a1aa';
         ctx.font = 'bold 20px monospace';
-        ctx.fillText(`کۆد: ${product.barcode}`, width / 2, titleY + 34);
+        ctx.fillText(`کۆدی کاڵا: ${product.barcode}`, width / 2, titleY + 36);
       }
 
+      // 5. Price Card (Comparison without "د.ع")
       const priceBoxY = titleY + (isStory ? 80 : 55);
       const priceBoxH = isStory ? 140 : 120;
       const priceBoxW = width - (isStory ? 120 : 140);
       const priceBoxX = (width - priceBoxW) / 2;
 
       ctx.fillStyle = posterTheme === 'clean_studio'
-        ? 'rgba(255, 255, 255, 0.9)'
-        : 'rgba(255, 255, 255, 0.12)';
-      ctx.beginPath();
-      ctx.roundRect(priceBoxX, priceBoxY, priceBoxW, priceBoxH, 20);
-      ctx.fill();
+        ? '#f8fafc'
+        : posterTheme === 'vibrant_crimson'
+        ? 'rgba(0, 0, 0, 0.3)'
+        : 'rgba(255, 255, 255, 0.05)';
+      ctx.fillRect(priceBoxX, priceBoxY, priceBoxW, priceBoxH);
       ctx.strokeStyle = posterTheme === 'clean_studio'
-        ? 'rgba(99, 102, 241, 0.3)'
-        : 'rgba(255, 255, 255, 0.25)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
+        ? '#e2e8f0'
+        : 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(priceBoxX, priceBoxY, priceBoxW, priceBoxH);
 
-      ctx.fillStyle = posterTheme === 'clean_studio' ? '#4f46e5' : '#fde047';
-      ctx.font = 'black 54px Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(`${discountedPrice.toLocaleString()} د.ع`, width / 2 - 140, priceBoxY + priceBoxH / 2 + 18);
+      const hasOldPrice = product.promotionDiscount && product.promotionDiscount > 0;
 
-      ctx.fillStyle = posterTheme === 'clean_studio' ? '#94a3b8' : 'rgba(255, 255, 255, 0.6)';
-      ctx.font = 'bold 30px Arial, sans-serif';
-      const oldText = `${product.retailPrice.toLocaleString()} د.ع`;
-      const oldX = width / 2 + 170;
-      const oldY = priceBoxY + priceBoxH / 2 + 12;
-      ctx.fillText(oldText, oldX, oldY);
-      const oldW = ctx.measureText(oldText).width;
-      ctx.strokeStyle = '#ef4444';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.moveTo(oldX - oldW / 2 - 8, oldY - 10);
-      ctx.lineTo(oldX + oldW / 2 + 8, oldY - 10);
-      ctx.stroke();
+      if (hasOldPrice) {
+        // Left Column (Old Price)
+        const leftX = priceBoxX + priceBoxW * 0.23;
+        ctx.fillStyle = posterTheme === 'clean_studio' ? '#71717a' : '#a1a1aa';
+        ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('نرخی پێشوو', leftX, priceBoxY + 38);
 
+        ctx.fillStyle = posterTheme === 'clean_studio' ? '#a1a1aa' : '#71717a';
+        ctx.font = 'bold 30px system-ui, -apple-system, monospace, sans-serif';
+        const oldText = `${product.retailPrice.toLocaleString()}`;
+        ctx.fillText(oldText, leftX, priceBoxY + 84);
+
+        const oldW = ctx.measureText(oldText).width;
+        ctx.strokeStyle = '#e1144a';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(leftX - oldW / 2 - 6, priceBoxY + 76);
+        ctx.lineTo(leftX + oldW / 2 + 6, priceBoxY + 76);
+        ctx.stroke();
+
+        // Center Discount Badge
+        const badgeW = 100;
+        const badgeH = 42;
+        const badgeX = width / 2 - badgeW / 2;
+        const badgeY = priceBoxY + (priceBoxH - badgeH) / 2;
+        ctx.fillStyle = '#e1144a';
+        ctx.fillRect(badgeX, badgeY, badgeW, badgeH);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 20px system-ui, -apple-system, monospace, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`-%${Math.round(product.promotionDiscount || 0)}`, width / 2, badgeY + 28);
+
+        // Right Column (New Price)
+        const rightX = priceBoxX + priceBoxW * 0.77;
+        ctx.fillStyle = posterTheme === 'clean_studio' ? '#059669' : '#34d399';
+        ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('نرخی ئێستا', rightX, priceBoxY + 38);
+
+        ctx.fillStyle = posterTheme === 'clean_studio' ? '#09090b' : '#ffffff';
+        ctx.font = '900 52px system-ui, -apple-system, monospace, sans-serif';
+        ctx.fillText(`${discountedPrice.toLocaleString()}`, rightX, priceBoxY + 88);
+      } else {
+        // Single Price
+        ctx.fillStyle = posterTheme === 'clean_studio' ? '#09090b' : '#ffffff';
+        ctx.font = '900 56px system-ui, -apple-system, monospace, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${discountedPrice.toLocaleString()}`, width / 2, priceBoxY + priceBoxH / 2 + 18);
+      }
+
+      // 6. Meta Information Strip (Quantity limit & Offer End)
       const infoY = priceBoxY + priceBoxH + (isStory ? 45 : 30);
-      const infoBoxW = (priceBoxW - 24) / 2;
+      const infoBoxW = (priceBoxW - 20) / 2;
       const infoBoxH = isStory ? 120 : 100;
 
-      ctx.fillStyle = posterTheme === 'clean_studio' ? '#ffffff' : 'rgba(0, 0, 0, 0.35)';
-      ctx.beginPath();
-      ctx.roundRect(priceBoxX, infoY, infoBoxW, infoBoxH, 16);
-      ctx.fill();
-      ctx.strokeStyle = posterTheme === 'clean_studio' ? '#e2e8f0' : 'rgba(255, 255, 255, 0.15)';
+      // Box 1: Limit
+      ctx.fillStyle = posterTheme === 'clean_studio' ? '#ffffff' : posterTheme === 'vibrant_crimson' ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.04)';
+      ctx.fillRect(priceBoxX, infoY, infoBoxW, infoBoxH);
+      ctx.strokeStyle = posterTheme === 'clean_studio' ? '#e2e8f0' : 'rgba(255, 255, 255, 0.12)';
       ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ctx.fillStyle = posterTheme === 'clean_studio' ? '#64748b' : 'rgba(255, 255, 255, 0.7)';
-      ctx.font = 'bold 20px Arial, sans-serif';
-      ctx.fillText('عەدەدی ڕێگەپێدراو', priceBoxX + infoBoxW / 2, infoY + 36);
-      ctx.fillStyle = posterTheme === 'clean_studio' ? '#0f172a' : '#ffffff';
-      ctx.font = 'black 26px Arial, sans-serif';
+      ctx.strokeRect(priceBoxX, infoY, infoBoxW, infoBoxH);
+      ctx.fillStyle = posterTheme === 'clean_studio' ? '#71717a' : '#a1a1aa';
+      ctx.font = 'bold 19px system-ui, -apple-system, sans-serif';
+      ctx.fillText('سنووری کڕین', priceBoxX + infoBoxW / 2, infoY + 36);
+      ctx.fillStyle = posterTheme === 'clean_studio' ? '#09090b' : '#ffffff';
+      ctx.font = '900 25px system-ui, -apple-system, sans-serif';
       ctx.fillText(
         product.promotionLimit ? `تەنها ${product.promotionLimit} دانە` : 'بێ سنوور',
         priceBoxX + infoBoxW / 2,
         infoY + 76
       );
 
-      const box2X = priceBoxX + infoBoxW + 24;
-      ctx.fillStyle = posterTheme === 'clean_studio' ? '#ffffff' : 'rgba(0, 0, 0, 0.35)';
-      ctx.beginPath();
-      ctx.roundRect(box2X, infoY, infoBoxW, infoBoxH, 16);
-      ctx.fill();
-      ctx.strokeStyle = posterTheme === 'clean_studio' ? '#e2e8f0' : 'rgba(255, 255, 255, 0.15)';
+      // Box 2: End Date
+      const box2X = priceBoxX + infoBoxW + 20;
+      ctx.fillStyle = posterTheme === 'clean_studio' ? '#ffffff' : posterTheme === 'vibrant_crimson' ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.04)';
+      ctx.fillRect(box2X, infoY, infoBoxW, infoBoxH);
+      ctx.strokeStyle = posterTheme === 'clean_studio' ? '#e2e8f0' : 'rgba(255, 255, 255, 0.12)';
       ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ctx.fillStyle = posterTheme === 'clean_studio' ? '#64748b' : 'rgba(255, 255, 255, 0.7)';
-      ctx.font = 'bold 20px Arial, sans-serif';
-      ctx.fillText('کۆتایی ئۆفەر', box2X + infoBoxW / 2, infoY + 36);
-      ctx.fillStyle = posterTheme === 'clean_studio' ? '#0f172a' : '#ffffff';
-      ctx.font = 'black 26px Arial, sans-serif';
-      ctx.fillText(product.promotionEnd || 'کاتی دیارینەکراو', box2X + infoBoxW / 2, infoY + 76);
+      ctx.strokeRect(box2X, infoY, infoBoxW, infoBoxH);
+      ctx.fillStyle = posterTheme === 'clean_studio' ? '#71717a' : '#a1a1aa';
+      ctx.font = 'bold 19px system-ui, -apple-system, sans-serif';
+      ctx.fillText('ماوەی ئۆفەر', box2X + infoBoxW / 2, infoY + 36);
+      ctx.fillStyle = posterTheme === 'clean_studio' ? '#09090b' : '#ffffff';
+      ctx.font = '900 25px system-ui, -apple-system, sans-serif';
+      ctx.fillText(product.promotionEnd || 'کاتی دیاریکراو', box2X + infoBoxW / 2, infoY + 76);
 
-      const footerY = isStory ? height - 100 : height - 60;
-      ctx.fillStyle = posterTheme === 'clean_studio' ? '#475569' : 'rgba(255, 255, 255, 0.75)';
-      ctx.font = 'bold 22px Arial, sans-serif';
-      ctx.fillText(`📞 پەیوەندی: ${phone}   📍 ناونیشان: ${address}`, width / 2, footerY);
+      // 7. Minimal Footer (Address & Phone)
+      const footerY = isStory ? height - 90 : height - 55;
+      ctx.fillStyle = posterTheme === 'clean_studio' ? '#71717a' : '#a1a1aa';
+      ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${address}   •   ${phone}`, width / 2, footerY);
 
       const link = document.createElement('a');
       link.download = `Offer_${product.name.replace(/\s+/g, '_')}_${posterRatio}_${posterTheme}.png`;
@@ -503,10 +533,7 @@ export const DiscountsManager: React.FC<DiscountsManagerProps> = ({
 
     prodImg.onload = () => {
       ctx.save();
-      ctx.beginPath();
-      ctx.roundRect(imgX + 8, imgY + 8, imgSize - 16, imgSize - 16, 18);
-      ctx.clip();
-      ctx.drawImage(prodImg, imgX + 8, imgY + 8, imgSize - 16, imgSize - 16);
+      ctx.drawImage(prodImg, imgX + 16, imgY + 16, imgSize - 32, imgSize - 32);
       ctx.restore();
       renderRemaining();
     };
@@ -751,7 +778,7 @@ export const DiscountsManager: React.FC<DiscountsManagerProps> = ({
                 </tr>
               ) : (
                 filteredProducts.map((product) => {
-                  const hasDiscount = product.promotionDiscount && product.promotionDiscount > 0;
+                  const hasDiscount = Boolean(product.promotionDiscount && product.promotionDiscount > 0);
                   const discountedPrice = hasDiscount
                     ? Math.round(product.retailPrice - (product.retailPrice * (product.promotionDiscount || 0)) / 100)
                     : product.retailPrice;
@@ -1374,50 +1401,48 @@ export const DiscountsManager: React.FC<DiscountsManagerProps> = ({
             </div>
 
             {/* Poster Card Live Display */}
-            <div className="p-6 bg-zinc-100 overflow-y-auto flex items-center justify-center flex-1 min-h-[380px]">
+            <div className="p-6 bg-zinc-200/70 overflow-y-auto flex items-center justify-center flex-1 min-h-[400px]">
               <div
                 id="offer-poster-element"
-                className={`w-full shadow-xl overflow-hidden transition-all duration-300 select-none relative flex flex-col justify-between rounded-none ${
+                className={`w-full shadow-2xl overflow-hidden transition-all duration-300 select-none relative flex flex-col justify-between rounded-none font-sans ${
                   posterRatio === 'story'
-                    ? 'max-w-[340px] min-h-[580px] p-5.5'
-                    : 'max-w-[380px] min-h-[420px] p-5'
+                    ? 'max-w-[340px] min-h-[590px] p-6'
+                    : 'max-w-[380px] min-h-[440px] p-6'
                 } ${
                   posterTheme === 'clean_studio'
-                    ? 'bg-gradient-to-b from-white to-zinc-100 text-zinc-900 border border-zinc-300'
+                    ? 'bg-gradient-to-b from-white via-zinc-50 to-zinc-100 text-zinc-900 border border-zinc-300'
                     : posterTheme === 'vibrant_crimson'
-                    ? 'bg-gradient-to-b from-[#e1144a] via-[#9f1239] to-[#4c0519] text-white border border-rose-500/30'
-                    : 'bg-gradient-to-b from-[#090d16] via-[#0f172a] to-[#1e1b4b] text-white border border-zinc-700'
+                    ? 'bg-gradient-to-b from-[#500724] via-[#881337] to-[#360210] text-white border border-rose-900/60'
+                    : 'bg-gradient-to-b from-[#090a0f] via-[#10121a] to-[#161922] text-white border border-zinc-800'
                 }`}
               >
-                {/* Poster Top Bar */}
-                <div className="flex items-center justify-between gap-2 z-10">
+                {/* Centered Minimal Store Name Header */}
+                <div className="flex items-center justify-center z-10 w-full">
                   <span
-                    className={`px-3 py-1 font-black text-[11px] rounded-none shadow-xs flex items-center gap-1 tracking-wide ${
+                    className={`px-4 py-1 font-bold text-xs tracking-wide rounded-none flex items-center justify-center gap-2 border ${
                       posterTheme === 'clean_studio'
-                        ? 'bg-rose-600 text-white'
-                        : 'bg-amber-400 text-zinc-950'
+                        ? 'border-zinc-200 bg-zinc-50 text-zinc-900 shadow-2xs'
+                        : posterTheme === 'vibrant_crimson'
+                        ? 'border-white/20 bg-black/25 text-white'
+                        : 'border-zinc-800 bg-zinc-900/90 text-zinc-100'
                     }`}
                   >
-                    <Flame className="w-3.5 h-3.5 fill-current" />
-                    {t('ئۆفەری تایبەت', 'SPECIAL OFFER')}
-                  </span>
-
-                  <span
-                    className={`px-3 py-1 font-black text-[11px] rounded-none tracking-wider font-sans border ${
-                      posterTheme === 'clean_studio'
-                        ? 'border-zinc-300 bg-white text-zinc-800'
-                        : 'border-white/20 bg-white/10 text-white'
-                    }`}
-                  >
-                    ✨ {systemConfig?.shopNameKu || 'پەراوگەی باران'}
+                    <Store className="w-3.5 h-3.5 opacity-80" />
+                    <span className="font-extrabold tracking-wider">{systemConfig?.shopNameKu || systemConfig?.shopNameEn || 'پەراوگەی باران'}</span>
                   </span>
                 </div>
 
-                {/* Product Image Box with Floating Discount Pill */}
+                {/* Product Showcase Pedestal with Floating Discount Pill */}
                 <div
-                  className={`relative mx-auto my-3.5 bg-white p-1 rounded-none border-2 shadow-lg overflow-hidden shrink-0 z-10 flex items-center justify-center transition-all ${
-                    posterRatio === 'story' ? 'w-48 h-48' : 'w-44 h-44'
-                  } ${posterTheme === 'clean_studio' ? 'border-zinc-300' : 'border-white'}`}
+                  className={`relative mx-auto my-4 bg-white p-3 rounded-none border shadow-xl shrink-0 z-10 flex items-center justify-center transition-all ${
+                    posterRatio === 'story' ? 'w-52 h-52' : 'w-44 h-44'
+                  } ${
+                    posterTheme === 'clean_studio'
+                      ? 'border-zinc-200 shadow-md'
+                      : posterTheme === 'vibrant_crimson'
+                      ? 'border-white/20 shadow-2xl'
+                      : 'border-zinc-800/80 shadow-2xl'
+                  }`}
                 >
                   <img
                     src={
@@ -1428,84 +1453,150 @@ export const DiscountsManager: React.FC<DiscountsManagerProps> = ({
                       )
                     }
                     alt={activePosterProduct.name}
-                    className="w-full h-full object-cover rounded-none"
+                    className="w-full h-full object-contain"
                   />
-                  {activePosterProduct.promotionDiscount && activePosterProduct.promotionDiscount > 0 && (
-                    <div className="absolute top-2 left-2 bg-[#e1144a] text-white px-2.5 py-0.5 font-black text-xs rounded-none shadow-lg border border-white/50 animate-pulse">
+                  {Boolean(activePosterProduct.promotionDiscount && activePosterProduct.promotionDiscount > 0) && (
+                    <div className="absolute top-0 left-0 bg-rose-600 text-white px-2.5 py-0.5 font-black font-mono text-xs rounded-none shadow-md">
                       -%{Math.round(activePosterProduct.promotionDiscount)}
                     </div>
                   )}
                 </div>
 
                 {/* Product Title & Code */}
-                <div className="text-center px-2 z-10 space-y-0.5">
-                  <h2 className="font-black text-base sm:text-lg leading-tight truncate drop-shadow-xs">
+                <div className="text-center px-2 z-10 space-y-1">
+                  <h2 className="font-black text-base sm:text-lg leading-tight truncate tracking-tight">
                     {lang === 'ku' ? activePosterProduct.nameKu || activePosterProduct.name : activePosterProduct.name}
                   </h2>
                   {activePosterProduct.barcode && (
                     <p
-                      className={`text-[11px] font-mono font-bold ${
-                        posterTheme === 'clean_studio' ? 'text-zinc-500' : 'text-zinc-400'
+                      className={`text-[10px] font-mono font-bold ${
+                        posterTheme === 'clean_studio'
+                          ? 'text-zinc-500'
+                          : posterTheme === 'vibrant_crimson'
+                          ? 'text-rose-200/80'
+                          : 'text-zinc-400'
                       }`}
                     >
-                      کۆد: {activePosterProduct.barcode}
+                      کۆدی کاڵا: {activePosterProduct.barcode}
                     </p>
                   )}
                 </div>
 
-                {/* Price Banner */}
+                {/* Price Showcase Banner - Clear visual comparison without currency suffix */}
                 <div
-                  className={`rounded-none p-3 my-2.5 flex items-center justify-center gap-3 z-10 border transition-all ${
+                  className={`rounded-none p-3 my-2.5 z-10 border transition-all ${
                     posterTheme === 'clean_studio'
-                      ? 'bg-white border-zinc-300 shadow-xs'
-                      : 'bg-white/10 border-white/20'
+                      ? 'bg-zinc-50 border-zinc-200 shadow-2xs'
+                      : posterTheme === 'vibrant_crimson'
+                      ? 'bg-black/30 border-white/20'
+                      : 'bg-zinc-900/90 border-zinc-800'
                   }`}
                 >
-                  <span
-                    className={`text-2xl sm:text-3xl font-black font-mono tracking-tight ${
-                      posterTheme === 'clean_studio' ? 'text-emerald-700' : 'text-yellow-300'
-                    }`}
-                    dir="ltr"
-                  >
-                    {formatCurrency(
-                      activePosterProduct.promotionDiscount
-                        ? Math.round(
+                  {Boolean(activePosterProduct.promotionDiscount && activePosterProduct.promotionDiscount > 0) ? (
+                    <div className="flex items-center justify-between gap-3">
+                      {/* Old Price Section */}
+                      <div className="text-center flex-1">
+                        <span
+                          className={`text-[9px] font-bold block uppercase tracking-wide ${
+                            posterTheme === 'clean_studio'
+                              ? 'text-zinc-400'
+                              : posterTheme === 'vibrant_crimson'
+                              ? 'text-rose-200/70'
+                              : 'text-zinc-500'
+                          }`}
+                        >
+                          {t('نرخی پێشوو', 'Old Price')}
+                        </span>
+                        <span
+                          className={`line-through font-mono text-base sm:text-lg font-bold block mt-0.5 ${
+                            posterTheme === 'clean_studio'
+                              ? 'text-zinc-400'
+                              : posterTheme === 'vibrant_crimson'
+                              ? 'text-rose-200/60'
+                              : 'text-zinc-500'
+                          }`}
+                          dir="ltr"
+                        >
+                          {activePosterProduct.retailPrice.toLocaleString()}
+                        </span>
+                      </div>
+
+                      {/* Discount Pill in Center */}
+                      <div className="flex items-center justify-center shrink-0">
+                        <span className="px-2.5 py-1 bg-rose-600 text-white font-mono font-black text-xs rounded-none shadow-xs">
+                          -%{Math.round(activePosterProduct.promotionDiscount || 0)}
+                        </span>
+                      </div>
+
+                      {/* New Discounted Price Section */}
+                      <div className="text-center flex-1">
+                        <span
+                          className={`text-[9px] font-bold block uppercase tracking-wide ${
+                            posterTheme === 'clean_studio'
+                              ? 'text-emerald-700'
+                              : posterTheme === 'vibrant_crimson'
+                              ? 'text-white'
+                              : 'text-emerald-400'
+                          }`}
+                        >
+                          {t('نرخی ئێستا', 'New Price')}
+                        </span>
+                        <span
+                          className={`text-2xl sm:text-3xl font-black font-mono tracking-tight block mt-0.5 ${
+                            posterTheme === 'clean_studio'
+                              ? 'text-zinc-950'
+                              : posterTheme === 'vibrant_crimson'
+                              ? 'text-white'
+                              : 'text-white'
+                          }`}
+                          dir="ltr"
+                        >
+                          {Math.round(
                             activePosterProduct.retailPrice -
-                              (activePosterProduct.retailPrice * activePosterProduct.promotionDiscount) / 100
-                          )
-                        : activePosterProduct.retailPrice,
-                      currency,
-                      lang,
-                      exchangeRate
-                    )}
-                  </span>
-                  <span
-                    className={`line-through font-mono text-sm font-bold ${
-                      posterTheme === 'clean_studio' ? 'text-zinc-400' : 'text-white/60'
-                    }`}
-                    dir="ltr"
-                  >
-                    {formatCurrency(activePosterProduct.retailPrice, currency, lang, exchangeRate)}
-                  </span>
+                              (activePosterProduct.retailPrice * (activePosterProduct.promotionDiscount || 0)) / 100
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <span
+                        className={`text-2xl sm:text-3xl font-black font-mono tracking-tight block ${
+                          posterTheme === 'clean_studio'
+                            ? 'text-zinc-950'
+                            : 'text-white'
+                        }`}
+                        dir="ltr"
+                      >
+                        {activePosterProduct.retailPrice.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Bottom 2 Info Boxes */}
+                {/* Bottom 2 Meta Info Boxes */}
                 <div className="grid grid-cols-2 gap-2 z-10">
                   <div
                     className={`rounded-none p-2 text-center border ${
                       posterTheme === 'clean_studio'
                         ? 'bg-white border-zinc-200 shadow-2xs'
-                        : 'bg-black/35 border-white/10'
+                        : posterTheme === 'vibrant_crimson'
+                        ? 'bg-black/30 border-white/15'
+                        : 'bg-zinc-900/80 border-zinc-800/80'
                     }`}
                   >
                     <span
-                      className={`text-[10px] font-bold block ${
-                        posterTheme === 'clean_studio' ? 'text-zinc-500' : 'text-white/70'
+                      className={`text-[9px] font-bold uppercase block ${
+                        posterTheme === 'clean_studio'
+                          ? 'text-zinc-500'
+                          : posterTheme === 'vibrant_crimson'
+                          ? 'text-rose-200/70'
+                          : 'text-zinc-400'
                       }`}
                     >
-                      {t('عەدەدی ڕێگەپێدراو', 'Allowed Quantity')}
+                      {t('سنووری کڕین', 'Purchase Limit')}
                     </span>
-                    <span className="text-xs font-black font-mono block mt-0.5">
+                    <span className="text-xs font-black font-sans block mt-0.5">
                       {activePosterProduct.promotionLimit
                         ? `${t('تەنها', 'Only')} ${activePosterProduct.promotionLimit} ${t('دانە', 'pcs')}`
                         : t('بێ سنوور', 'Unlimited')}
@@ -1516,32 +1607,47 @@ export const DiscountsManager: React.FC<DiscountsManagerProps> = ({
                     className={`rounded-none p-2 text-center border ${
                       posterTheme === 'clean_studio'
                         ? 'bg-white border-zinc-200 shadow-2xs'
-                        : 'bg-black/35 border-white/10'
+                        : posterTheme === 'vibrant_crimson'
+                        ? 'bg-black/30 border-white/15'
+                        : 'bg-zinc-900/80 border-zinc-800/80'
                     }`}
                   >
                     <span
-                      className={`text-[10px] font-bold block ${
-                        posterTheme === 'clean_studio' ? 'text-zinc-500' : 'text-white/70'
+                      className={`text-[9px] font-bold uppercase block ${
+                        posterTheme === 'clean_studio'
+                          ? 'text-zinc-500'
+                          : posterTheme === 'vibrant_crimson'
+                          ? 'text-rose-200/70'
+                          : 'text-zinc-400'
                       }`}
                     >
-                      {t('کۆتایی ئۆفەر', 'Offer End')}
+                      {t('ماوەی ئۆفەر', 'Offer Validity')}
                     </span>
-                    <span className="text-xs font-black font-mono block mt-0.5">
-                      {activePosterProduct.promotionEnd || t('کاتی دیارینەکراو', 'Limited time')}
+                    <span className="text-xs font-black font-sans block mt-0.5">
+                      {activePosterProduct.promotionEnd || t('کاتی دیاریکراو', 'Limited time')}
                     </span>
                   </div>
                 </div>
 
-                {/* Footer Location & Contact Bar */}
+                {/* Footer Location & Contact Bar - Ultra Minimal */}
                 <div
-                  className={`mt-2 pt-2 border-t text-[10px] font-mono text-center font-bold z-10 flex items-center justify-around ${
+                  className={`mt-3.5 pt-2.5 border-t text-[11px] font-sans font-medium z-10 flex items-center justify-between gap-3 ${
                     posterTheme === 'clean_studio'
-                      ? 'border-zinc-300 text-zinc-500'
-                      : 'border-white/10 text-white/70'
+                      ? 'border-zinc-200 text-zinc-600'
+                      : posterTheme === 'vibrant_crimson'
+                      ? 'border-white/15 text-rose-100/90'
+                      : 'border-zinc-800 text-zinc-400'
                   }`}
                 >
-                  <span>📞 {systemConfig?.phone || '0750 000 0000'}</span>
-                  <span>📍 {systemConfig?.address || 'سلێمانی - شەقامی سەرەکی'}</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <MapPin className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                    <span className="truncate">{systemConfig?.address || 'سلێمانی - شەقامی سەرەکی'}</span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0 font-mono font-bold" dir="ltr">
+                    <Phone className="w-3.5 h-3.5 shrink-0 opacity-70" />
+                    <span>{systemConfig?.phone || '0770 000 0000'}</span>
+                  </div>
                 </div>
               </div>
             </div>

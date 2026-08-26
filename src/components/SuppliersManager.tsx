@@ -25,6 +25,7 @@ import {
   RotateCcw,
   Check,
   Barcode,
+  Save,
 } from 'lucide-react';
 import { Supplier, PurchaseInvoice, Product } from '../types';
 import { Currency, formatCurrency } from '../utils/currency';
@@ -38,6 +39,7 @@ interface SupplierPaymentReceipt {
   date: string;
   paidBy: string;
   notes?: string;
+  previousDebt?: number;
   remainingDebt: number;
 }
 
@@ -254,7 +256,7 @@ export const SuppliersManager: React.FC<SuppliersManagerProps> = ({
       id: `sup_${Date.now()}`,
       companyName: supName.trim(),
       contactPerson: supName.trim(),
-      phone: supPhone.trim() || '0750 000 0000',
+      phone: supPhone.trim() || '0770 000 0000',
       address: supAddress.trim() || '',
       notes: supNotes.trim() || '',
       currentDebt: 0,
@@ -274,7 +276,7 @@ export const SuppliersManager: React.FC<SuppliersManagerProps> = ({
       ...editingSupplier,
       companyName: supName.trim(),
       contactPerson: supName.trim(),
-      phone: supPhone.trim() || '0750 000 0000',
+      phone: supPhone.trim() || '0770 000 0000',
       address: supAddress.trim() || '',
       notes: supNotes.trim() || '',
     };
@@ -1091,7 +1093,7 @@ export const SuppliersManager: React.FC<SuppliersManagerProps> = ({
                   {t('پەیوەندی و ناونیشان', 'Contact & Address')}
                 </span>
                 <span className="text-sm font-black font-mono text-slate-900 block">
-                  {currentDetailSupplier.phone || '0750 000 0000'}
+                  {currentDetailSupplier.phone || '0770 000 0000'}
                 </span>
               </div>
               <div className="w-10 h-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
@@ -2018,35 +2020,33 @@ export const SuppliersManager: React.FC<SuppliersManagerProps> = ({
         </div>
       )}
 
-      {/* MODAL 1: Add New Supplier (Matching uploaded screenshot media_1787607270001.png) */}
+      {/* MODAL 1: Add New Supplier (Minimal Formal) */}
       {isAddSupplierOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 font-sans">
-          <div className="bg-white border border-slate-200 w-full max-w-md p-6 space-y-4 shadow-2xl rounded-2xl" dir={lang === 'ku' ? 'rtl' : 'ltr'}>
+          <div className="bg-white border border-zinc-300 w-full max-w-md shadow-2xl rounded-none font-sans text-zinc-900 overflow-hidden flex flex-col" dir={lang === 'ku' ? 'rtl' : 'ltr'}>
             
-            {/* Header matching screenshot */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
+            {/* Modal Header */}
+            <div className="bg-zinc-900 text-white px-5 py-3.5 border-b border-zinc-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-                  <Store className="w-4 h-4" />
-                </div>
-                <h3 className="font-black text-sm text-slate-900">
+                <Store className="w-4 h-4 text-zinc-300" />
+                <h3 className="font-black text-xs uppercase tracking-wider text-white">
                   {t('تۆمارکردنی دابینکەری نوێ', 'Register New Supplier')}
                 </h3>
               </div>
               <button 
                 type="button" 
                 onClick={() => setIsAddSupplierOpen(false)} 
-                className="text-slate-400 hover:text-slate-900 cursor-pointer p-1 rounded-lg transition-colors"
+                className="text-zinc-400 hover:text-white cursor-pointer transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateSupplier} className="space-y-3.5 text-xs">
+            <form onSubmit={handleCreateSupplier} className="p-5 space-y-3.5 text-xs font-sans">
               {/* Field 1: Company / Supplier Name */}
               <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1">
-                  {t('ناوی دابینکەر / کۆمپانیا:', 'Supplier / Company Name:')}
+                <label className="text-[11px] font-bold text-zinc-700 block mb-1">
+                  {t('ناوی دابینکەر / کۆمپانیا:', 'Supplier / Company Name:')} *
                 </label>
                 <input
                   type="text"
@@ -2054,27 +2054,28 @@ export const SuppliersManager: React.FC<SuppliersManagerProps> = ({
                   placeholder={t('ناوی کۆمپانیا یان نوێنەر...', 'Company or representative name...')}
                   value={supName}
                   onChange={(e) => setSupName(e.target.value)}
-                  className="w-full h-10 bg-white border border-slate-300 rounded-lg px-3 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none shadow-2xs transition-all"
+                  className="w-full h-9 bg-white border border-zinc-300 rounded-none px-3 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-800 outline-none shadow-2xs transition-all"
                 />
               </div>
 
               {/* Field 2: Phone Number */}
               <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1">
+                <label className="text-[11px] font-bold text-zinc-700 block mb-1">
                   {t('ژمارەی مۆبایل:', 'Phone Number:')}
                 </label>
                 <input
-                  type="text"
-                  placeholder="0750 000 0000"
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="0770 000 0000"
                   value={supPhone}
-                  onChange={(e) => setSupPhone(e.target.value)}
-                  className="w-full h-10 bg-white border border-slate-300 rounded-lg px-3 text-xs font-mono text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none shadow-2xs transition-all text-start"
+                  onChange={(e) => setSupPhone(e.target.value.replace(/\D/g, ''))}
+                  className="w-full h-9 bg-white border border-zinc-300 rounded-none px-3 text-xs font-mono text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-800 outline-none shadow-2xs transition-all text-start"
                 />
               </div>
 
               {/* Field 3: Address */}
               <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1">
+                <label className="text-[11px] font-bold text-zinc-700 block mb-1">
                   {t('ناونیشان:', 'Address:')}
                 </label>
                 <input
@@ -2082,13 +2083,13 @@ export const SuppliersManager: React.FC<SuppliersManagerProps> = ({
                   placeholder={t('شار، گەڕەک یان ناونیشانی کۆمپانیا...', 'City, district or company address...')}
                   value={supAddress}
                   onChange={(e) => setSupAddress(e.target.value)}
-                  className="w-full h-10 bg-white border border-slate-300 rounded-lg px-3 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none shadow-2xs transition-all"
+                  className="w-full h-9 bg-white border border-zinc-300 rounded-none px-3 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-800 outline-none shadow-2xs transition-all"
                 />
               </div>
 
               {/* Field 4: Notes */}
               <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1">
+                <label className="text-[11px] font-bold text-zinc-700 block mb-1">
                   {t('تێبینی:', 'Notes:')}
                 </label>
                 <textarea
@@ -2096,24 +2097,25 @@ export const SuppliersManager: React.FC<SuppliersManagerProps> = ({
                   placeholder={t('هەر تێبینییەکی زیادە...', 'Any additional notes...')}
                   value={supNotes}
                   onChange={(e) => setSupNotes(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-lg p-3 text-xs text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none shadow-2xs resize-none transition-all"
+                  className="w-full bg-white border border-zinc-300 rounded-none p-3 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-800 outline-none shadow-2xs resize-none transition-all"
                 />
               </div>
 
               {/* Footer Actions */}
-              <div className="pt-3 flex items-center justify-start gap-3">
-                <button
-                  type="submit"
-                  className="px-7 py-2.5 bg-[#4f46e5] hover:bg-[#4338ca] text-white font-bold text-xs rounded-lg shadow-sm transition-all cursor-pointer active:scale-98"
-                >
-                  {t('تۆمارکردن', 'Register')}
-                </button>
+              <div className="pt-3 border-t border-zinc-200 flex items-center justify-end gap-2 font-sans">
                 <button
                   type="button"
                   onClick={() => setIsAddSupplierOpen(false)}
-                  className="text-slate-500 hover:text-slate-800 font-bold text-xs cursor-pointer px-2 py-2 transition-colors"
+                  className="h-9 px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold text-xs rounded-none border border-zinc-300 transition-colors cursor-pointer"
                 >
                   {t('پاشگەزبوونەوە', 'Cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="h-9 px-5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-none transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{t('تۆمارکردن', 'Register')}</span>
                 </button>
               </div>
             </form>
@@ -2121,98 +2123,99 @@ export const SuppliersManager: React.FC<SuppliersManagerProps> = ({
         </div>
       )}
 
-      {/* MODAL 2: Edit Supplier */}
+      {/* MODAL 2: Edit Supplier (Minimal Formal) */}
       {editingSupplier && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 font-sans">
-          <div className="bg-white border border-slate-200 w-full max-w-md p-6 space-y-4 shadow-2xl rounded-2xl" dir={lang === 'ku' ? 'rtl' : 'ltr'}>
+          <div className="bg-white border border-zinc-300 w-full max-w-md shadow-2xl rounded-none font-sans text-zinc-900 overflow-hidden flex flex-col" dir={lang === 'ku' ? 'rtl' : 'ltr'}>
             
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
+            {/* Modal Header */}
+            <div className="bg-zinc-900 text-white px-5 py-3.5 border-b border-zinc-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-                  <Edit3 className="w-4 h-4" />
-                </div>
-                <h3 className="font-black text-sm text-slate-900">
+                <Edit3 className="w-4 h-4 text-zinc-300" />
+                <h3 className="font-black text-xs uppercase tracking-wider text-white">
                   {t('دەستکاریکردنی زانیاریی دابینکەر', 'Edit Supplier Info')}
                 </h3>
               </div>
               <button 
                 type="button" 
                 onClick={() => setEditingSupplier(null)} 
-                className="text-slate-400 hover:text-slate-900 cursor-pointer p-1 rounded-lg transition-colors"
+                className="text-zinc-400 hover:text-white cursor-pointer transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEditSupplier} className="space-y-3.5 text-xs">
+            <form onSubmit={handleSaveEditSupplier} className="p-5 space-y-3.5 text-xs font-sans">
               {/* Field 1: Company / Supplier Name */}
               <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1">
-                  {t('ناوی دابینکەر / کۆمپانیا:', 'Supplier / Company Name:')}
+                <label className="text-[11px] font-bold text-zinc-700 block mb-1">
+                  {t('ناوی دابینکەر / کۆمپانیا:', 'Supplier / Company Name:')} *
                 </label>
                 <input
                   type="text"
                   required
                   value={supName}
                   onChange={(e) => setSupName(e.target.value)}
-                  className="w-full h-10 bg-white border border-slate-300 rounded-lg px-3 text-xs text-slate-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none shadow-2xs transition-all"
+                  className="w-full h-9 bg-white border border-zinc-300 rounded-none px-3 text-xs text-zinc-900 focus:border-zinc-800 outline-none shadow-2xs transition-all"
                 />
               </div>
 
               {/* Field 2: Phone Number */}
               <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1">
+                <label className="text-[11px] font-bold text-zinc-700 block mb-1">
                   {t('ژمارەی مۆبایل:', 'Phone Number:')}
                 </label>
                 <input
-                  type="text"
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="0770 000 0000"
                   value={supPhone}
-                  onChange={(e) => setSupPhone(e.target.value)}
-                  className="w-full h-10 bg-white border border-slate-300 rounded-lg px-3 text-xs font-mono text-slate-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none shadow-2xs transition-all text-start"
+                  onChange={(e) => setSupPhone(e.target.value.replace(/\D/g, ''))}
+                  className="w-full h-9 bg-white border border-zinc-300 rounded-none px-3 text-xs font-mono text-zinc-900 focus:border-zinc-800 outline-none shadow-2xs transition-all text-start"
                 />
               </div>
 
               {/* Field 3: Address */}
               <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1">
+                <label className="text-[11px] font-bold text-zinc-700 block mb-1">
                   {t('ناونیشان:', 'Address:')}
                 </label>
                 <input
                   type="text"
                   value={supAddress}
                   onChange={(e) => setSupAddress(e.target.value)}
-                  className="w-full h-10 bg-white border border-slate-300 rounded-lg px-3 text-xs text-slate-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none shadow-2xs transition-all"
+                  className="w-full h-9 bg-white border border-zinc-300 rounded-none px-3 text-xs text-zinc-900 focus:border-zinc-800 outline-none shadow-2xs transition-all"
                 />
               </div>
 
               {/* Field 4: Notes */}
               <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1">
+                <label className="text-[11px] font-bold text-zinc-700 block mb-1">
                   {t('تێبینی:', 'Notes:')}
                 </label>
                 <textarea
                   rows={2}
                   value={supNotes}
                   onChange={(e) => setSupNotes(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-lg p-3 text-xs text-slate-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none shadow-2xs resize-none transition-all"
+                  className="w-full bg-white border border-zinc-300 rounded-none p-3 text-xs text-zinc-900 focus:border-zinc-800 outline-none shadow-2xs resize-none transition-all"
                 />
               </div>
 
               {/* Footer Actions */}
-              <div className="pt-3 flex items-center justify-start gap-3">
-                <button
-                  type="submit"
-                  className="px-7 py-2.5 bg-[#4f46e5] hover:bg-[#4338ca] text-white font-bold text-xs rounded-lg shadow-sm transition-all cursor-pointer active:scale-98"
-                >
-                  {t('پاشەکەوتکردن', 'Save Changes')}
-                </button>
+              <div className="pt-3 border-t border-zinc-200 flex items-center justify-end gap-2 font-sans">
                 <button
                   type="button"
                   onClick={() => setEditingSupplier(null)}
-                  className="text-slate-500 hover:text-slate-800 font-bold text-xs cursor-pointer px-2 py-2 transition-colors"
+                  className="h-9 px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold text-xs rounded-none border border-zinc-300 transition-colors cursor-pointer"
                 >
                   {t('پاشگەزبوونەوە', 'Cancel')}
+                </button>
+                <button
+                  type="submit"
+                  className="h-9 px-5 bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs rounded-none transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{t('پاشەکەوتکردن', 'Save Changes')}</span>
                 </button>
               </div>
             </form>
