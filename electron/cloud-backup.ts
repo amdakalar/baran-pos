@@ -61,7 +61,7 @@ export async function createCloudBackup(
   try {
     const hardwareId = getHardwareFingerprint();
     const encryptionKey = deriveEncryptionKey(hardwareId);
-    const appVersion = app ? app.getVersion() : '1.0.2';
+    const appVersion = app ? app.getVersion() : '1.0.3';
 
     // 1. Get raw snapshot of all store items
     const storeSnapshot = getAllDataSnapshot();
@@ -198,7 +198,7 @@ export async function listCloudBackups(): Promise<CloudBackupMetadata[]> {
       item_count: parseInt(r.item_count) || 0,
       invoice_count: parseInt(r.invoice_count) || 0,
       created_at: String(r.created_at || ''),
-      app_version: String(r.app_version || '1.0.2'),
+      app_version: String(r.app_version || '1.0.3'),
     }));
   } catch (err) {
     console.error('Failed to list cloud backups:', err);
