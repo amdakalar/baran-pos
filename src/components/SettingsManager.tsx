@@ -59,7 +59,7 @@ import {
 import { SystemConfig, AuditLog, Product, DisplayScale } from '../types';
 import { CloudBackupItem } from '../types/electron';
 import { Currency } from '../utils/currency';
-import { APP_VERSION, isNewerVersion, openExternalUrl } from '../utils/version';
+import { APP_VERSION, fetchLatestRelease, isNewerVersion, openExternalUrl } from '../utils/version';
 import {
   formatAuditAction,
   formatAuditCategory,
@@ -258,38 +258,22 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
     setUpdateStatus(null);
     setGithubUpdateInfo(null);
     try {
-      const response = await fetch('https://api.github.com/repos/amdakalar/baran-pos/releases/latest', {
-        headers: { Accept: 'application/vnd.github.v3+json' },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const tag = (data.tag_name || '').replace(/^v/, '').trim();
-        const asset = data.assets?.find((a: any) => a.name.endsWith('.exe')) || data.assets?.[0];
-        const downloadUrl = asset?.browser_download_url || data.html_url || 'https://github.com/amdakalar/baran-pos/releases/latest';
-
-        const isNewer = isNewerVersion(tag, CURRENT_APP_VERSION);
-
-        if (isNewer) {
-          setGithubUpdateInfo({
-            hasUpdate: true,
-            latestVersion: tag,
-            releaseTitle: data.name || `وەشانی نوێ v${tag}`,
-            releaseNotes: data.body || '',
-            downloadUrl,
-            publishedAt: data.published_at || '',
-          });
-          setUpdateStatus(t(`وەشانی نوێی (v${tag}) بەردەستە لە GitHub!`, `New version (v${tag}) is available on GitHub!`));
-        } else {
-          setUpdateStatus(t(`سیستەمەکەت نوێترین وەشانە (v${CURRENT_APP_VERSION}) و بەستراوە بە GitHub.`, `System is up to date (v${CURRENT_APP_VERSION}) and connected to GitHub.`));
-        }
-      } else if (response.status === 404) {
-        setUpdateStatus(t(`ڕیپۆستۆری چالاکە و سیستەمەکەت نوێترین وەشانە (v${CURRENT_APP_VERSION}).`, `Repository connected. Current version (v${CURRENT_APP_VERSION}) is up to date.`));
+      const update = await fetchLatestRelease(CURRENT_APP_VERSION);
+      if (update && isNewerVersion(update.version, CURRENT_APP_VERSION)) {
+        setGithubUpdateInfo({
+          hasUpdate: true,
+          latestVersion: update.version,
+          releaseTitle: update.title,
+          releaseNotes: update.releaseNotes,
+          downloadUrl: update.downloadUrl,
+          publishedAt: update.publishedAt || '',
+        });
+        setUpdateStatus(t(`وەشانی نوێی (v${update.version}) بەردەستە!`, `New version (v${update.version}) is available!`));
       } else {
-        setUpdateStatus(t(`پشکنینی نوێکردنەوە لە GitHub ئەنجامدرا (${response.statusText}).`, `GitHub check status: ${response.statusText}.`));
+        setUpdateStatus(t(`سیستەمەکەت نوێترین وەشانە (v${CURRENT_APP_VERSION}) و کارایە.`, `System is up to date (v${CURRENT_APP_VERSION}).`));
       }
     } catch {
-      setUpdateStatus(t('پشکنینی نوێکردنەوە ئەنجامدرا. سیستەمەکەت کارایە.', 'Update check completed. System is active.'));
+      setUpdateStatus(t('پشکنینی نوێکردنەوە ئەنجامدرا. سیستەمەکەت نوێترین وەشانە.', 'Update check completed. System is active.'));
     } finally {
       setIsCheckingUpdate(false);
     }

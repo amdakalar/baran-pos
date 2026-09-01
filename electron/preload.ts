@@ -57,6 +57,8 @@ const electronAPI = {
   app: {
     getVersion: (): Promise<string> =>
       ipcRenderer.invoke('app:getVersion'),
+    checkUpdate: (): Promise<any> =>
+      ipcRenderer.invoke('app:checkUpdate'),
     openExternal: (url: string): Promise<void> =>
       ipcRenderer.invoke('app:openExternal', url),
   },

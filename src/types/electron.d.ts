@@ -70,6 +70,7 @@ export interface ElectronCloudBackupAPI {
 
 export interface ElectronAppAPI {
   getVersion: () => Promise<string>;
+  checkUpdate: () => Promise<{ hasUpdate: boolean; latestVersion: string; title: string; releaseNotes: string; downloadUrl: string } | null>;
   openExternal: (url: string) => Promise<void>;
 }
 
