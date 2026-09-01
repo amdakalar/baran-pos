@@ -1022,7 +1022,7 @@ export const DiscountsManager: React.FC<DiscountsManagerProps> = ({
                           <div className="text-[10px] font-mono text-zinc-400 mt-0.5">
                             {t('نرخی ئاسایی:', 'Regular:')}{' '}
                             <span className="font-bold text-zinc-600">
-                              {product.retailPrice.toLocaleString()} {t('د.ع.', 'IQD')}
+                              {product.retailPrice.toLocaleString()} {t('', 'IQD')}
                             </span>
                           </div>
                         </div>

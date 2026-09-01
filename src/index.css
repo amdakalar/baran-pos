@@ -7,6 +7,24 @@
   }
 }
 
+/* Screen Display Density Profiles (Clean REM-based Responsive Sizing) */
+html {
+  font-size: 15px;
+}
+
+html[data-display-scale="small"] {
+  font-size: 13.5px;
+}
+
+html[data-display-scale="medium"],
+html:not([data-display-scale]) {
+  font-size: 15px;
+}
+
+html[data-display-scale="large"] {
+  font-size: 16.5px;
+}
+
 html[lang="ku"],
 html[lang="ku"] body,
 html[lang="ku"] button,
@@ -62,6 +80,7 @@ body {
   html, body, #root {
     background-color: #ffffff !important;
     background: #ffffff !important;
+    zoom: 1 !important;
   }
 
   * {

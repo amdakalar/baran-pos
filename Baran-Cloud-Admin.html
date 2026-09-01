@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>داشبۆردی کلاودی Turso — باران POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Noto Kufi Arabic', system-ui, -apple-system, sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-[#09090b] text-zinc-100 min-h-screen flex flex-col selection:bg-indigo-500/30">
+
+  <!-- Top Navigation Bar -->
+  <header class="bg-[#121215] border-b border-zinc-800/90 sticky top-0 z-40 px-4 sm:px-8 py-3.5 flex items-center justify-between shadow-md">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-cyan-600/20 border border-cyan-500/30 p-1.5 flex items-center justify-center shadow-inner">
+        <!-- Turso Icon -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6 text-cyan-400">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 5.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125m16.5 5.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+          <span>داشبۆردی کلاودی Turso</span>
+          <span class="text-[10px] bg-cyan-950 text-cyan-300 border border-cyan-700/60 px-2 py-0.5 rounded-full font-mono">TURSO libSQL</span>
+        </h1>
+        <p class="text-xs text-zinc-400">کۆنتڕۆڵکردن و گۆڕینی پلانی ئامێرەکانی باران POS لە کلاود</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button 
+        id="configBtn" 
+        class="h-9 px-3.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700/70 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+      >
+        <span>⚙️ ڕێکخستنی Turso</span>
+      </button>
+      <button 
+        id="refreshBtn" 
+        class="h-9 px-3.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-lg shadow-cyan-600/20"
+      >
+        <span>🔄 نوێکردنەوە</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-8 space-y-6">
+
+    <!-- Metric Stat Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      
+      <!-- Total Devices -->
+      <div class="bg-[#121215] border border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-md flex items-center justify-between">
+        <div>
+          <span class="text-xs text-zinc-400 font-medium block">کۆی گشتی ئامێرەکان</span>
+          <span id="statTotal" class="text-2xl sm:text-3xl font-extrabold text-white font-mono mt-1 block">0</span>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 text-lg">
+          📱
+        </div>
+      </div>
+
+      <!-- Active Devices -->
+      <div class="bg-[#121215] border border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-md flex items-center justify-between">
+        <div>
+          <span class="text-xs text-zinc-400 font-medium block">ئامێرە چالاکەکان</span>
+          <span id="statActive" class="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono mt-1 block">0</span>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-lg">
+          🟢
+        </div>
+      </div>
+
+      <!-- Offline Warning -->
+      <div class="bg-[#121215] border border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-md flex items-center justify-between">
+        <div>
+          <span class="text-xs text-zinc-400 font-medium block">ئۆفلاین (>٢٤ کاتژمێر)</span>
+          <span id="statWarning" class="text-2xl sm:text-3xl font-extrabold text-amber-400 font-mono mt-1 block">0</span>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-lg">
+          ⏳
+        </div>
+      </div>
+
+      <!-- Suspended / Locked -->
+      <div class="bg-[#121215] border border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-md flex items-center justify-between">
+        <div>
+          <span class="text-xs text-zinc-400 font-medium block">ڕاگیراو (Locked)</span>
+          <span id="statSuspended" class="text-2xl sm:text-3xl font-extrabold text-rose-400 font-mono mt-1 block">0</span>
+        </div>
+        <div class="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 text-lg">
+          ⛔
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Search & Actions Bar -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#121215] border border-zinc-800/90 rounded-2xl p-3 sm:p-4">
+      <div class="relative w-full sm:w-80">
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="گەڕان بەپێی ناوی کڕیار، شوێن، یان Hardware ID..." 
+          class="w-full h-10 bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-cyan-500 transition-colors"
+        />
+      </div>
+
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <select 
+          id="filterStatus" 
+          class="h-10 bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-zinc-300 focus:outline-none focus:border-cyan-500 cursor-pointer"
+        >
+          <option value="all">هەموو دۆخەکان</option>
+          <option value="active">تەنها چالاکەکان</option>
+          <option value="suspended">تەنها ڕاگیراوەکان</option>
+        </select>
+
+        <button 
+          id="addNewDeviceBtn"
+          class="h-10 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+        >
+          <span>+ زیادکردنی ئامێر</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Device List Table -->
+    <div class="bg-[#121215] border border-zinc-800/90 rounded-2xl overflow-hidden shadow-xl">
+      <div class="overflow-x-auto">
+        <table class="w-full text-start text-xs">
+          <thead class="bg-zinc-950/80 border-b border-zinc-800 text-zinc-400 font-semibold">
+            <tr>
+              <th class="p-3.5 text-start">شوێن / کڕیار</th>
+              <th class="p-3.5 text-start">ناسنامەی ئامێر (Hardware ID)</th>
+              <th class="p-3.5 text-start">پلان و ماوە</th>
+              <th class="p-3.5 text-start">دواین ئۆنلاین (Heartbeat)</th>
+              <th class="p-3.5 text-start">دۆخ</th>
+              <th class="p-3.5 text-center">کردارەکان (Actions)</th>
+            </tr>
+          </thead>
+          <tbody id="deviceTableBody" class="divide-y divide-zinc-800/60">
+            <!-- Table rows will be rendered here dynamically -->
+            <tr>
+              <td colspan="6" class="p-8 text-center text-zinc-500">
+                خەریکی بارکردنی زانیارییەکانە لە کلاودی Turso...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal: Edit Plan -->
+  <div id="planModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-[#121215] border border-zinc-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <h3 class="font-bold text-white text-sm">گۆڕینی پلانی ئامێر لە دوورەوە</h3>
+        <button id="closePlanModal" class="text-zinc-400 hover:text-white cursor-pointer">✕</button>
+      </div>
+      
+      <div class="space-y-3 text-xs">
+        <p class="text-zinc-400">ئامێر: <span id="modalDeviceName" class="text-white font-bold font-mono"></span></p>
+
+        <label class="block font-semibold text-zinc-300">هەڵبژاردنی پلانی نوێ لە Turso:</label>
+        <div class="space-y-1.5">
+          <label class="flex items-center justify-between p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 cursor-pointer has-[:checked]:border-cyan-500">
+            <input type="radio" name="newPlan" value="T07" class="accent-cyan-500" />
+            <span class="font-medium text-zinc-200">٧ ڕۆژ (تاقیکردنەوە)</span>
+            <span class="text-emerald-400 font-mono">بێ بەرامبەر</span>
+          </label>
+          <label class="flex items-center justify-between p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 cursor-pointer has-[:checked]:border-cyan-500">
+            <input type="radio" name="newPlan" value="M03" class="accent-cyan-500" />
+            <span class="font-medium text-zinc-200">٣ مانگ</span>
+            <span class="text-zinc-300 font-mono">١٠٠,٠٠٠ د.ع</span>
+          </label>
+          <label class="flex items-center justify-between p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 cursor-pointer has-[:checked]:border-cyan-500">
+            <input type="radio" name="newPlan" value="M06" class="accent-cyan-500" />
+            <span class="font-medium text-zinc-200">٦ مانگ</span>
+            <span class="text-zinc-300 font-mono">١٥٠,٠٠٠ د.ع</span>
+          </label>
+          <label class="flex items-center justify-between p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 cursor-pointer has-[:checked]:border-cyan-500">
+            <input type="radio" name="newPlan" value="Y01" class="accent-cyan-500" />
+            <span class="font-medium text-zinc-200">١ ساڵ (ساڵانە)</span>
+            <span class="text-zinc-300 font-mono">٢٩٠,٠٠٠ د.ع</span>
+          </label>
+          <label class="flex items-center justify-between p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 cursor-pointer has-[:checked]:border-cyan-500">
+            <input type="radio" name="newPlan" value="LFT" checked class="accent-cyan-500" />
+            <span class="font-bold text-cyan-300">هەتاهەتایی (Lifetime)</span>
+            <span class="text-emerald-400 font-mono font-bold">٤٥٠,٠٠٠ د.ع</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button id="savePlanBtn" class="flex-1 h-10 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer">
+          پاشەکەوتکردن لە Turso
+        </button>
+        <button id="cancelPlanBtn" class="px-4 h-10 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-xs rounded-xl transition-colors cursor-pointer">
+          پاشگەزبوونەوە
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Turso Config & SQL Schema Setup -->
+  <div id="configModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-[#121215] border border-zinc-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <h3 class="font-bold text-white text-sm">ڕێکخستنی کلاودی Turso (libSQL)</h3>
+        <button id="closeConfigModal" class="text-zinc-400 hover:text-white cursor-pointer">✕</button>
+      </div>
+      
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1">Turso Database URL:</label>
+          <input type="text" id="cfgUrl" placeholder="https://baran-pos-db-yourorg.turso.io" class="w-full h-9 bg-zinc-950 border border-zinc-800 rounded-lg px-3 text-white font-mono text-[11px] focus:outline-none focus:border-cyan-500" dir="ltr" />
+        </div>
+
+        <div>
+          <label class="block font-semibold text-zinc-300 mb-1">Turso Auth Token:</label>
+          <input type="text" id="cfgKey" placeholder="eyJhbGciOiJFZERTQSI..." class="w-full h-9 bg-zinc-950 border border-zinc-800 rounded-lg px-3 text-white font-mono text-[11px] focus:outline-none focus:border-cyan-500" dir="ltr" />
+        </div>
+
+        <div class="p-3 bg-zinc-950 rounded-xl border border-zinc-800 space-y-1.5">
+          <span class="font-bold text-zinc-300 block">دروستکردنی خشتەی Turso (SQL Schema):</span>
+          <p class="text-[11px] text-zinc-400">ئەم کۆدە لە Turso CLI یان وێبی Turso جێبەجێ بکە:</p>
+          <pre class="bg-zinc-900 p-2.5 rounded-lg font-mono text-[10px] text-cyan-300 overflow-x-auto select-all" dir="ltr">CREATE TABLE IF NOT EXISTS pos_licenses (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  hardware_id TEXT UNIQUE NOT NULL,
+  shop_name TEXT NOT NULL DEFAULT 'پەراوگەى باران',
+  customer_name TEXT DEFAULT '',
+  phone TEXT DEFAULT '',
+  plan_code TEXT NOT NULL DEFAULT 'LFT',
+  status TEXT NOT NULL DEFAULT 'active',
+  activated_at TEXT DEFAULT (datetime('now')),
+  last_heartbeat_at TEXT DEFAULT (datetime('now'))
+);</pre>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button id="saveConfigBtn" class="flex-1 h-10 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer">
+          پاشەکەوتکردن
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DEFAULT_TURSO_CONFIG = {
+      databaseUrl: 'https://baran-pos-db-ali.turso.io',
+      authToken: 'eyJhbGciOiJFZERTQSI...example_turso_jwt_auth_token_baran_secure',
+      tableName: 'pos_licenses',
+    };
+
+    const PLANS = {
+      T07: { nameKu: '٧ ڕۆژ (تاقیکردنەوە)', price: 'بێ بەرامبەر' },
+      M03: { nameKu: '٣ مانگ', price: '١٠٠,٠٠٠ د.ع' },
+      M06: { nameKu: '٦ مانگ', price: '١٥٠,٠٠٠ د.ع' },
+      Y01: { nameKu: '١ ساڵ', price: '٢٩٠,٠٠٠ د.ع' },
+      LFT: { nameKu: 'هەتاهەتایی (Lifetime)', price: '٤٥٠,٠٠٠ د.ع' },
+    };
+
+    let currentDevices = [];
+    let selectedDeviceForPlan = null;
+
+    function getConfig() {
+      const saved = localStorage.getItem('baran_turso_cfg');
+      if (saved) {
+        try { return JSON.parse(saved); } catch {}
+      }
+      return DEFAULT_TURSO_CONFIG;
+    }
+
+    function saveConfig(cfg) {
+      localStorage.setItem('baran_turso_cfg', JSON.stringify(cfg));
+    }
+
+    function formatTursoArg(val) {
+      if (val === null || val === undefined) return { type: 'null' };
+      if (typeof val === 'number') {
+        return Number.isInteger(val) ? { type: 'integer', value: String(val) } : { type: 'float', value: val };
+      }
+      return { type: 'text', value: String(val) };
+    }
+
+    async function executeTurso(sql, args = []) {
+      const cfg = getConfig();
+      let url = cfg.databaseUrl.trim();
+      if (url.startsWith('libsql://')) url = url.replace('libsql://', 'https://');
+      if (url.endsWith('/')) url = url.slice(0, -1);
+      const pipelineUrl = `${url}/v2/pipeline`;
+
+      const payload = {
+        requests: [
+          {
+            type: 'execute',
+            stmt: {
+              sql,
+              args: args.map(formatTursoArg),
+            },
+          },
+          {
+            type: 'close',
+          },
+        ],
+      };
+
+      const res = await fetch(pipelineUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${cfg.authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Turso Error: ${res.status} ${res.statusText}`);
+      }
+
+      const data = await res.json();
+      const result = data?.results?.[0]?.response?.result;
+      if (!result || !result.cols || !result.rows) return [];
+
+      const cols = result.cols.map(c => c.name);
+      return result.rows.map(row => {
+        const obj = {};
+        cols.forEach((colName, idx) => {
+          obj[colName] = row[idx]?.value ?? null;
+        });
+        return obj;
+      });
+    }
+
+    async function fetchDevices() {
+      const tbody = document.getElementById('deviceTableBody');
+      tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-zinc-500">خەریکی وەرگرتنی داتا لە داتابەیسی Turso...</td></tr>`;
+
+      try {
+        const cfg = getConfig();
+        const data = await executeTurso(`SELECT * FROM ${cfg.tableName} ORDER BY last_heartbeat_at DESC`);
+        currentDevices = data || [];
+        renderDevices(currentDevices);
+        updateStats(currentDevices);
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-rose-400">هەڵە لە پەیوەندی بە Turso: ${err.message}<br><button onclick="document.getElementById('configBtn').click()" class="mt-2 text-cyan-400 underline text-xs">کلیک لێرە بکە بۆ ڕێکخستنی Database URL و Auth Token</button></td></tr>`;
+      }
+    }
+
+    function updateStats(devices) {
+      const nowSec = Math.floor(Date.now() / 1000);
+      let active = 0;
+      let warning = 0;
+      let suspended = 0;
+
+      devices.forEach(d => {
+        if (d.status === 'suspended' || d.status === 'revoked') {
+          suspended++;
+        } else {
+          active++;
+          const lastSec = Math.floor(new Date(d.last_heartbeat_at).getTime() / 1000);
+          const elapsed = nowSec - lastSec;
+          if (elapsed > 24 * 3600) {
+            warning++;
+          }
+        }
+      });
+
+      document.getElementById('statTotal').textContent = devices.length;
+      document.getElementById('statActive').textContent = active;
+      document.getElementById('statWarning').textContent = warning;
+      document.getElementById('statSuspended').textContent = suspended;
+    }
+
+    function renderDevices(devices) {
+      const tbody = document.getElementById('deviceTableBody');
+      if (!devices || devices.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-zinc-500">هیچ ئامێرێک تۆمار نەکراوە لە Turso تا ئێستا.</td></tr>`;
+        return;
+      }
+
+      const nowSec = Math.floor(Date.now() / 1000);
+
+      tbody.innerHTML = devices.map(d => {
+        const plan = PLANS[d.plan_code] || PLANS.LFT;
+        const lastSec = Math.floor(new Date(d.last_heartbeat_at).getTime() / 1000);
+        const elapsedSec = Math.max(0, nowSec - lastSec);
+        const isOnlineNow = elapsedSec < 15 * 60;
+        const isOver24h = elapsedSec > 24 * 3600;
+        const isOver48h = elapsedSec > 48 * 3600;
+
+        const isSuspended = d.status === 'suspended' || d.status === 'revoked';
+
+        let statusBadge = '';
+        if (isSuspended) {
+          statusBadge = `<span class="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/30 text-[10px] font-bold">⛔ ڕاگیراو (Locked)</span>`;
+        } else if (isOnlineNow) {
+          statusBadge = `<span class="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">🟢 ئۆنلاین ئێستا</span>`;
+        } else if (isOver48h) {
+          statusBadge = `<span class="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 border border-rose-500/30 text-[10px] font-bold">🔒 قفڵ (>٤٨ کاتژمێر)</span>`;
+        } else if (isOver24h) {
+          statusBadge = `<span class="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/30 text-[10px] font-bold">⚠️ ئۆفلاین (>٢٤ کاتژمێر)</span>`;
+        } else {
+          statusBadge = `<span class="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 text-[10px]">ئۆفلاین (<٢٤ کاتژمێر)</span>`;
+        }
+
+        const dateStr = d.last_heartbeat_at ? new Date(d.last_heartbeat_at).toLocaleString('en-GB') : '—';
+
+        return `
+          <tr class="hover:bg-zinc-900/40 transition-colors">
+            <td class="p-3.5">
+              <span class="font-bold text-white block">${d.shop_name || 'پەراوگەى باران'}</span>
+              <span class="text-[11px] text-zinc-400">${d.customer_name || 'بەکارهێنەر'} • ${d.phone || 'بێ مۆبایل'}</span>
+            </td>
+            <td class="p-3.5">
+              <span class="font-mono text-[11px] text-zinc-300 block select-all cursor-pointer" title="کلیک بکە بۆ کۆپیکردن" onclick="navigator.clipboard.writeText('${d.hardware_id}'); alert('کۆپی کرا!')">${d.hardware_id.substring(0, 18)}...</span>
+            </td>
+            <td class="p-3.5">
+              <span class="font-semibold text-cyan-300 block">${plan.nameKu}</span>
+              <span class="text-[11px] font-mono text-zinc-400">${plan.price}</span>
+            </td>
+            <td class="p-3.5 font-mono text-[11px] text-zinc-400">
+              ${dateStr}
+            </td>
+            <td class="p-3.5">
+              ${statusBadge}
+            </td>
+            <td class="p-3.5 text-center">
+              <div class="flex items-center justify-center gap-1.5">
+                <button onclick="openChangePlanModal('${d.hardware_id}', '${d.shop_name || ''}', '${d.plan_code || 'LFT'}')" class="px-2.5 py-1 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg text-[11px] font-medium transition-colors cursor-pointer">
+                  گۆڕینی پلان
+                </button>
+                ${
+                  isSuspended
+                    ? `<button onclick="toggleDeviceStatus('${d.hardware_id}', 'active')" class="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/30 rounded-lg text-[11px] font-medium transition-colors cursor-pointer">چالاککردن</button>`
+                    : `<button onclick="toggleDeviceStatus('${d.hardware_id}', 'suspended')" class="px-2.5 py-1 bg-rose-600/20 hover:bg-rose-600/40 text-rose-300 border border-rose-500/30 rounded-lg text-[11px] font-medium transition-colors cursor-pointer">ڕاگرتن</button>`
+                }
+                <button onclick="deleteDevice('${d.hardware_id}')" class="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-rose-400 rounded-lg text-[11px] transition-colors cursor-pointer">
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    window.openChangePlanModal = function(hwId, shopName, currentPlan) {
+      selectedDeviceForPlan = hwId;
+      document.getElementById('modalDeviceName').textContent = shopName || hwId.substring(0, 16);
+      const radio = document.querySelector(`input[name="newPlan"][value="${currentPlan}"]`);
+      if (radio) radio.checked = true;
+      document.getElementById('planModal').classList.remove('hidden');
+      document.getElementById('planModal').classList.add('flex');
+    };
+
+    window.toggleDeviceStatus = async function(hwId, newStatus) {
+      const cfg = getConfig();
+      if (!confirm(`ئایا دڵنیایت دەتەوێت ئەم ئامێرە بکەیتە (${newStatus === 'active' ? 'چالاک' : 'ڕاگیراو'}) لە Turso؟`)) return;
+
+      try {
+        await executeTurso(`UPDATE ${cfg.tableName} SET status = ? WHERE hardware_id = ?`, [newStatus, hwId]);
+        fetchDevices();
+      } catch (err) {
+        alert('هەڵە لە نوێکردنەوە: ' + err.message);
+      }
+    };
+
+    window.deleteDevice = async function(hwId) {
+      const cfg = getConfig();
+      if (!confirm('ئایا دڵنیایت دەتەوێت ئەم ئامێرە بسڕیتەوە لە داتابەیسی Turso؟')) return;
+
+      try {
+        await executeTurso(`DELETE FROM ${cfg.tableName} WHERE hardware_id = ?`, [hwId]);
+        fetchDevices();
+      } catch (err) {
+        alert('هەڵە لە سڕینەوە: ' + err.message);
+      }
+    };
+
+    document.getElementById('savePlanBtn').addEventListener('click', async () => {
+      if (!selectedDeviceForPlan) return;
+      const cfg = getConfig();
+      const newPlan = document.querySelector('input[name="newPlan"]:checked')?.value || 'LFT';
+
+      try {
+        await executeTurso(`UPDATE ${cfg.tableName} SET plan_code = ? WHERE hardware_id = ?`, [newPlan, selectedDeviceForPlan]);
+        document.getElementById('planModal').classList.add('hidden');
+        document.getElementById('planModal').classList.remove('flex');
+        fetchDevices();
+      } catch (err) {
+        alert('هەڵە لە گۆڕینی پلان: ' + err.message);
+      }
+    });
+
+    document.getElementById('closePlanModal').onclick = () => {
+      document.getElementById('planModal').classList.add('hidden');
+      document.getElementById('planModal').classList.remove('flex');
+    };
+    document.getElementById('cancelPlanBtn').onclick = () => {
+      document.getElementById('planModal').classList.add('hidden');
+      document.getElementById('planModal').classList.remove('flex');
+    };
+
+    // Config Modal
+    document.getElementById('configBtn').onclick = () => {
+      const cfg = getConfig();
+      document.getElementById('cfgUrl').value = cfg.databaseUrl;
+      document.getElementById('cfgKey').value = cfg.authToken;
+      document.getElementById('configModal').classList.remove('hidden');
+      document.getElementById('configModal').classList.add('flex');
+    };
+    document.getElementById('closeConfigModal').onclick = () => {
+      document.getElementById('configModal').classList.add('hidden');
+      document.getElementById('configModal').classList.remove('flex');
+    };
+    document.getElementById('saveConfigBtn').onclick = () => {
+      const cfg = {
+        databaseUrl: document.getElementById('cfgUrl').value.trim(),
+        authToken: document.getElementById('cfgKey').value.trim(),
+        tableName: 'pos_licenses',
+      };
+      saveConfig(cfg);
+      document.getElementById('configModal').classList.add('hidden');
+      document.getElementById('configModal').classList.remove('flex');
+      fetchDevices();
+    };
+
+    // Search filter
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      const filtered = currentDevices.filter(d => 
+        (d.shop_name || '').toLowerCase().includes(q) ||
+        (d.customer_name || '').toLowerCase().includes(q) ||
+        (d.hardware_id || '').toLowerCase().includes(q) ||
+        (d.phone || '').includes(q)
+      );
+      renderDevices(filtered);
+    });
+
+    document.getElementById('refreshBtn').onclick = () => fetchDevices();
+
+    // Add New Device button
+    document.getElementById('addNewDeviceBtn').onclick = async () => {
+      const hwId = prompt('تکایە Hardware ID ی ئامێرەکە بنووسە:');
+      if (!hwId || !hwId.trim()) return;
+      const shopName = prompt('ناوی مارکێت یان دوکان بنووسە:', 'پەراوگەى باران') || 'پەراوگەى باران';
+      const customerName = prompt('ناوی کڕیار بنووسە:') || '';
+      const phone = prompt('ژمارەی مۆبایل بنووسە:') || '';
+
+      const cfg = getConfig();
+      try {
+        await executeTurso(
+          `INSERT INTO ${cfg.tableName} (hardware_id, shop_name, customer_name, phone, plan_code, status, activated_at, last_heartbeat_at) VALUES (?, ?, ?, ?, 'LFT', 'active', datetime('now'), datetime('now'))`,
+          [hwId.trim(), shopName.trim(), customerName.trim(), phone.trim()]
+        );
+        fetchDevices();
+      } catch (err) {
+        alert('هەڵە لە زیادکردن لە Turso: ' + err.message);
+      }
+    };
+
+    // Initial load
+    fetchDevices();
+  </script>
+</body>
+</html>

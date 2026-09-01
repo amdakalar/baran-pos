@@ -368,23 +368,23 @@ export const ReportsManager: React.FC<ReportsManagerProps> = ({
                     <tbody className="divide-y divide-zinc-300">
                       <tr>
                         <td className="p-2 border-r border-black font-bold">کۆی گشتی داهاتی فرۆشتن (+)</td>
-                        <td className="p-2 text-end font-black">{totalGrossRevenue.toLocaleString()} د.ع</td>
+                        <td className="p-2 text-end font-black">{totalGrossRevenue.toLocaleString()}</td>
                       </tr>
                       <tr>
                         <td className="p-2 border-r border-black">دابەزاندنی تێچووی کڕینی کاڵای فرۆشراو (-)</td>
-                        <td className="p-2 text-end text-zinc-700">-{totalCOGS.toLocaleString()} د.ع</td>
+                        <td className="p-2 text-end text-zinc-700">-{totalCOGS.toLocaleString()}</td>
                       </tr>
                       <tr className="bg-zinc-50 font-bold border-t border-b border-black">
                         <td className="p-2 border-r border-black">کۆی قازانجی سەرەتایی (GROSS PROFIT)</td>
-                        <td className="p-2 text-end font-black">{grossProfit.toLocaleString()} د.ع</td>
+                        <td className="p-2 text-end font-black">{grossProfit.toLocaleString()}</td>
                       </tr>
                       <tr>
                         <td className="p-2 border-r border-black text-rose-700">دابەزاندنی خەرجیییەکانی کارکردن (-)</td>
-                        <td className="p-2 text-end text-rose-700">-{totalExpenses.toLocaleString()} د.ع</td>
+                        <td className="p-2 text-end text-rose-700">-{totalExpenses.toLocaleString()}</td>
                       </tr>
                       <tr className="bg-black text-white font-black text-sm">
                         <td className="p-2.5 border-r border-zinc-700">کۆی قازانجی پاکی نەقد (NET OPERATING PROFIT)</td>
-                        <td className="p-2.5 text-end font-mono">{netProfit.toLocaleString()} د.ع</td>
+                        <td className="p-2.5 text-end font-mono">{netProfit.toLocaleString()}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -394,11 +394,11 @@ export const ReportsManager: React.FC<ReportsManagerProps> = ({
                 <div className="grid grid-cols-2 gap-4 text-xs font-mono border border-black p-3">
                   <div>
                     <span className="font-bold block">فرۆشتنی نەقد:</span>
-                    <span>{cashSalesTotal.toLocaleString()} د.ع</span>
+                    <span>{cashSalesTotal.toLocaleString()}</span>
                   </div>
                   <div>
                     <span className="font-bold block">فرۆشتنی بە قەرز:</span>
-                    <span>{debtSalesTotal.toLocaleString()} د.ع</span>
+                    <span>{debtSalesTotal.toLocaleString()}</span>
                   </div>
                 </div>
 

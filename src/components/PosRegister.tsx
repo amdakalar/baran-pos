@@ -31,9 +31,16 @@ import {
   RotateCcw,
   CreditCard
 } from 'lucide-react';
-import { Product, Category, CartItem, Customer, HeldSale, SalesInvoice, UnitType, User } from '../types';
+import { Product, Category, CartItem, Customer, HeldSale, SalesInvoice, UnitType, User, DisplayScale } from '../types';
 import { Currency, formatCurrency, fromBaseIQD, toBaseIQD } from '../utils/currency';
 import { getSampleImageForProduct } from '../utils/productImages';
+import { 
+  normalizeBarcode, 
+  findProductByBarcode, 
+  playBarcodeSuccessBeep, 
+  playBarcodeErrorTone, 
+  useBarcodeScanner 
+} from '../utils/barcodeScanner';
 import { SalesReturnModal } from './SalesReturnModal';
 
 interface PosRegisterProps {
@@ -55,6 +62,7 @@ interface PosRegisterProps {
   exchangeRate?: number;
   currentUser?: User;
   invoices?: SalesInvoice[];
+  displayScale?: DisplayScale;
   pendingCustomPrintJobs?: Array<{
     product: Product;
     quantity: number;
@@ -107,13 +115,7 @@ const formatUnitName = (unit?: string, lang: string = 'ku'): string => {
 };
 
 const loadCartForCashier = (id: string): CartItem[] => {
-  try {
-    const saved = localStorage.getItem(getCashierCartKey(id));
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch {}
+  // Cart is loaded asynchronously via useEffect below
   return [];
 };
 
@@ -136,6 +138,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
   exchangeRate = 1500,
   currentUser,
   invoices = [],
+  displayScale = 'medium',
   pendingCustomPrintJobs = [],
   onClearPendingCustomPrintJobs,
   onProcessReturn,
@@ -156,21 +159,27 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
   const [discountValue, setDiscountValue] = React.useState<number>(0);
   const [isReturnModalOpen, setIsReturnModalOpen] = React.useState(false);
 
+  // Load cart from encrypted DB on mount
+  React.useEffect(() => {
+    window.electronAPI?.db?.get<CartItem[]>(getCashierCartKey(activeCashierId), []).then((saved) => {
+      if (saved && saved.length > 0) setCartItems(saved);
+    }).catch(() => {});
+  }, []);
+
   // Switch Cashier Session: Isolate each cashier's cart and reset cart state per cashier
   React.useEffect(() => {
     if (prevCashierIdRef.current !== activeCashierId) {
       // 1. Save previous cashier's cart if any
-      try {
-        if (cartItems.length > 0) {
-          localStorage.setItem(getCashierCartKey(prevCashierIdRef.current), JSON.stringify(cartItems));
-        } else {
-          localStorage.removeItem(getCashierCartKey(prevCashierIdRef.current));
-        }
-      } catch {}
+      if (cartItems.length > 0) {
+        window.electronAPI?.db?.set(getCashierCartKey(prevCashierIdRef.current), cartItems).catch(() => {});
+      } else {
+        window.electronAPI?.db?.delete(getCashierCartKey(prevCashierIdRef.current)).catch(() => {});
+      }
 
       // 2. Load current cashier's isolated cart
-      const newCashierCart = loadCartForCashier(activeCashierId);
-      setCartItems(newCashierCart);
+      window.electronAPI?.db?.get<CartItem[]>(getCashierCartKey(activeCashierId), []).then((saved) => {
+        setCartItems(saved && saved.length > 0 ? saved : []);
+      }).catch(() => setCartItems([]));
 
       // 3. Reset customer selection & discount for clean cashier session
       setSelectedCustomerId('walk_in');
@@ -186,25 +195,16 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
 
   // Persist active cashier cart whenever it changes
   React.useEffect(() => {
-    try {
-      if (cartItems.length > 0) {
-        localStorage.setItem(getCashierCartKey(activeCashierId), JSON.stringify(cartItems));
-      } else {
-        localStorage.removeItem(getCashierCartKey(activeCashierId));
-      }
-    } catch {}
+    if (cartItems.length > 0) {
+      window.electronAPI?.db?.set(getCashierCartKey(activeCashierId), cartItems).catch(() => {});
+    } else {
+      window.electronAPI?.db?.delete(getCashierCartKey(activeCashierId)).catch(() => {});
+    }
   }, [cartItems, activeCashierId]);
 
   // Sorting & Pagination State (Default 16 cards per page for all users)
   const [currentPage, setCurrentPage] = React.useState<number>(1);
-  const [itemsPerPage, setItemsPerPage] = React.useState<number>(() => {
-    try {
-      const saved = localStorage.getItem('pos_items_per_page');
-      return saved ? Number(saved) : 16;
-    } catch {
-      return 16;
-    }
-  });
+  const [itemsPerPage, setItemsPerPage] = React.useState<number>(16);
   const [sortBy, setSortBy] = React.useState<'top_selling' | 'name' | 'price_asc' | 'price_desc' | 'stock'>('top_selling');
 
   // Reset page when search, category filter, or sort changes
@@ -360,24 +360,6 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
     return sortedProducts.slice(start, start + itemsPerPage);
   }, [sortedProducts, validPage, itemsPerPage]);
 
-  // Handle Barcode Scanner Submission
-  const handleBarcodeSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!barcodeInput.trim()) return;
-
-    const matchedProduct = products.find(
-      (p) => p.barcode === barcodeInput.trim() || p.sku.toLowerCase() === barcodeInput.trim().toLowerCase()
-    );
-
-    if (matchedProduct) {
-      handleAddToCart(matchedProduct);
-      setBarcodeInput('');
-    } else {
-      alert(`No product found with barcode/SKU: ${barcodeInput}`);
-      setBarcodeInput('');
-    }
-  };
-
   // Check if a product has an active discount that has not expired
   const isProductDiscountActive = (product: Product): boolean => {
     if (!product.promotionDiscount || product.promotionDiscount <= 0) return false;
@@ -464,6 +446,66 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
         ...prev,
       ];
     });
+  };
+
+  // Live Barcode Feedback State
+  const [barcodeFeedback, setBarcodeFeedback] = React.useState<{
+    type: 'success' | 'error';
+    message: string;
+    productName?: string;
+  } | null>(null);
+
+  const lastProcessedScanRef = React.useRef<{ code: string; time: number }>({ code: '', time: 0 });
+
+  // Unified Barcode Processing (supports manual enter & hardware presentation scanner)
+  const processBarcodeScan = React.useCallback(
+    (rawScan: string) => {
+      if (!rawScan) return;
+      const clean = normalizeBarcode(rawScan);
+      if (!clean) return;
+
+      const now = Date.now();
+      if (lastProcessedScanRef.current.code === clean && now - lastProcessedScanRef.current.time < 350) {
+        return; // debounce duplicate triggers within 350ms
+      }
+      lastProcessedScanRef.current = { code: clean, time: now };
+
+      const matchedProduct = findProductByBarcode(products, clean);
+
+      if (matchedProduct) {
+        handleAddToCart(matchedProduct);
+        playBarcodeSuccessBeep();
+        setBarcodeInput('');
+        setBarcodeFeedback(null);
+      } else {
+        playBarcodeErrorTone();
+        setBarcodeFeedback({
+          type: 'error',
+          message: lang === 'ku'
+            ? `هیچ کاڵایەک نەدۆزرایەوە بە بارکۆدی: ${clean}`
+            : `No product found for barcode: ${clean}`,
+        });
+        setBarcodeInput('');
+        setTimeout(() => setBarcodeFeedback(null), 3500);
+      }
+    },
+    [products, handleAddToCart, lang]
+  );
+
+  // Global Hardware Barcode Scanner Listener for Omnidirectional / Desktop Scanner
+  useBarcodeScanner({
+    onScan: (scannedCode) => {
+      processBarcodeScan(scannedCode);
+    },
+    enabled: !isPayModalOpen && !isHeldModalOpen && !isReturnModalOpen && !editingImageProduct,
+  });
+
+  // Handle Barcode Scanner Form Submission
+  const handleBarcodeSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const rawVal = (barcodeInputRef.current?.value || barcodeInput || '').trim();
+    if (!rawVal) return;
+    processBarcodeScan(rawVal);
   };
 
   // Update Cart Line Quantity with Stock Check
@@ -635,7 +677,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
     setIsPayModalOpen(false);
     setCartItems([]);
     try {
-      localStorage.removeItem(getCashierCartKey(activeCashierId));
+      window.electronAPI?.db?.delete(getCashierCartKey(activeCashierId)).catch(() => {});
     } catch {}
     setCashTendered(0);
     setDiscountValue(0);
@@ -682,7 +724,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
     setIsPayModalOpen(false);
     setCartItems([]);
     try {
-      localStorage.removeItem(getCashierCartKey(activeCashierId));
+      window.electronAPI?.db?.delete(getCashierCartKey(activeCashierId)).catch(() => {});
     } catch {}
     setCashTendered(0);
     setDiscountValue(0);
@@ -698,10 +740,12 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
           <div className="flex items-center gap-2">
             {/* Barcode Scanner Input - Primary Wide Input */}
             <form onSubmit={handleBarcodeSubmit} className="flex-1 relative">
-              <Barcode className="w-4 h-4 text-zinc-400 absolute left-3 rtl:left-auto rtl:right-3 top-2.5 pointer-events-none" />
+              <Barcode className="w-4 h-4 text-zinc-500 absolute left-3 rtl:left-auto rtl:right-3 top-2.5 pointer-events-none" />
               <input
                 ref={barcodeInputRef}
                 type="text"
+                autoComplete="off"
+                spellCheck={false}
                 placeholder={
                   lang === 'ku'
                     ? 'بارکۆد سکان بکە یان داخڵی بکە... (F3)'
@@ -709,8 +753,17 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                 }
                 value={barcodeInput}
                 onChange={(e) => setBarcodeInput(e.target.value)}
-                className="w-full bg-white border border-zinc-300 hover:border-zinc-400 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 pl-9 rtl:pl-3 pr-3 rtl:pr-9 py-1.5 text-xs text-zinc-900 placeholder-zinc-400 font-mono rounded shadow-2xs outline-none transition-all h-8.5"
+                className="w-full bg-white border border-zinc-300 hover:border-zinc-400 focus:border-zinc-900 pl-9 rtl:pl-3 pr-3 rtl:pr-9 py-1.5 text-xs text-zinc-900 placeholder-zinc-400 font-mono rounded shadow-2xs outline-none transition-all h-8.5"
               />
+              {barcodeInput && (
+                <button
+                  type="button"
+                  onClick={() => setBarcodeInput('')}
+                  className="absolute right-2.5 rtl:right-auto rtl:left-2.5 top-2.5 text-zinc-400 hover:text-zinc-600 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </form>
 
             {/* General Search Input - Compact Width */}
@@ -885,18 +938,56 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
           </div>
         </div>
 
+        {/* Live Barcode Scan Feedback Notification */}
+        {barcodeFeedback && (
+          <div className="px-3 pt-2">
+            <div
+              className={`flex items-center justify-between px-3.5 py-2 rounded-lg border text-xs font-medium transition-all shadow-xs animate-in fade-in slide-in-from-top-1 ${
+                barcodeFeedback.type === 'success'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : 'bg-rose-50 border-rose-200 text-rose-800'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {barcodeFeedback.type === 'success' ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                )}
+                <span>
+                  {barcodeFeedback.message}
+                  {barcodeFeedback.productName && (
+                    <strong className="mx-1 font-bold">({barcodeFeedback.productName})</strong>
+                  )}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBarcodeFeedback(null)}
+                className="text-zinc-400 hover:text-zinc-600 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Product Catalog Grid / List */}
         <div
           className={
             viewMode === 'list'
-              ? 'flex-1 p-3.5 overflow-y-auto bg-zinc-100 flex flex-col gap-2 content-start'
+              ? 'flex-1 p-3 overflow-y-auto bg-zinc-100/90 flex flex-col gap-1.5 content-start'
               : viewMode === 'grid-2'
-              ? 'flex-1 p-3.5 overflow-y-auto bg-zinc-100 grid grid-cols-2 gap-3 content-start'
+              ? 'flex-1 p-3 overflow-y-auto bg-zinc-100/90 grid grid-cols-2 gap-3 content-start'
               : viewMode === 'grid-3'
-              ? 'flex-1 p-3.5 overflow-y-auto bg-zinc-100 grid grid-cols-2 sm:grid-cols-3 gap-2.5 content-start'
+              ? 'flex-1 p-3 overflow-y-auto bg-zinc-100/90 grid grid-cols-2 sm:grid-cols-3 gap-2.5 content-start'
               : viewMode === 'grid-4'
-              ? 'flex-1 p-3.5 overflow-y-auto bg-zinc-100 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 content-start'
-              : 'flex-1 p-3.5 overflow-y-auto bg-zinc-100 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 content-start'
+              ? 'flex-1 p-3 overflow-y-auto bg-zinc-100/90 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 content-start'
+              : displayScale === 'small'
+              ? 'flex-1 p-2.5 overflow-y-auto bg-zinc-100/90 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2 content-start'
+              : displayScale === 'large'
+              ? 'flex-1 p-4 overflow-y-auto bg-zinc-100/90 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-3.5 content-start'
+              : 'flex-1 p-3 overflow-y-auto bg-zinc-100/90 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2.5 content-start'
           }
         >
           {paginatedProducts.length === 0 ? (
@@ -922,17 +1013,17 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                   <div
                     key={p.id}
                     onClick={() => !isOutOfStock && handleAddToCart(p)}
-                    className={`flex items-center justify-between p-2.5 bg-white border transition-all rounded-xs select-none group ${
+                    className={`flex items-center justify-between p-2.5 bg-white border transition-all rounded-md select-none group ${
                       isOutOfStock
                         ? 'bg-zinc-50 border-zinc-200 opacity-50 cursor-not-allowed'
                         : inCartQty > 0
                         ? 'border-blue-600 ring-1 ring-blue-600 cursor-pointer shadow-xs'
-                        : 'border-zinc-300/80 hover:border-blue-500 cursor-pointer shadow-2xs hover:shadow-xs'
+                        : 'border-zinc-200/90 hover:border-blue-500 cursor-pointer shadow-2xs hover:shadow-xs'
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       {/* Thumbnail Image */}
-                      <div className="relative w-12 h-12 bg-zinc-100 rounded-xs overflow-hidden shrink-0 border border-zinc-200">
+                      <div className="relative w-12 h-12 bg-zinc-100 rounded-md overflow-hidden shrink-0 border border-zinc-200">
                         <img
                           src={p.image || getSampleImageForProduct(p.nameKu || p.name, p.categoryId)}
                           alt={p.name}
@@ -963,7 +1054,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
 
                       {/* Stock Badge with White Border */}
                       <span
-                        className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-xs leading-none shrink-0 flex items-center gap-1 border border-white shadow-xs ${
+                        className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-md leading-none shrink-0 flex items-center gap-1 border border-white shadow-xs ${
                           isOutOfStock
                             ? 'bg-zinc-600 text-white'
                             : isLowStock
@@ -984,13 +1075,13 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                             {lang === 'ku' ? (p.nameKu || p.name) : p.name}
                           </h3>
                           {priceInfo.isDiscounted && (
-                            <span className="bg-rose-50 border border-rose-200 text-[#e1144a] text-[9px] font-black font-mono px-1.5 py-0.5 rounded-xs flex items-center gap-0.5">
+                            <span className="bg-rose-50 border border-rose-200 text-[#e1144a] text-[9px] font-black font-mono px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
                               <Tag className="w-2.5 h-2.5 stroke-[2.5]" />
                               -{Math.round(priceInfo.discountPercent)}% {lang === 'ku' ? 'داشکاندن' : 'OFF'}
                             </span>
                           )}
                         </div>
-                        <div className="inline-block bg-[#f1f5f9] border border-zinc-300/80 px-2 py-0.5 rounded-xs mt-0.5">
+                        <div className="inline-block bg-[#f1f5f9] border border-zinc-200/90 px-2 py-0.5 rounded-md mt-0.5">
                           <p className="text-[9px] text-zinc-600 font-mono font-bold" dir="ltr">
                             {p.barcode || p.sku}
                           </p>
@@ -1032,7 +1123,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                           e.stopPropagation();
                           if (!isOutOfStock) handleAddToCart(p);
                         }}
-                        className={`w-7 h-7 rounded-xs flex items-center justify-center transition-all shrink-0 cursor-pointer ${
+                        className={`w-7 h-7 rounded-md flex items-center justify-center transition-all shrink-0 cursor-pointer ${
                           isOutOfStock
                             ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
                             : inCartQty > 0
@@ -1047,20 +1138,28 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                 );
               }
 
+              // Dynamic scale classes
+              const cardPadding = displayScale === 'small' ? 'p-2' : displayScale === 'large' ? 'p-3.5 sm:p-4' : 'p-2.5 sm:p-3';
+              const imgAspect = displayScale === 'small' ? 'aspect-[4/3] rounded-md' : displayScale === 'large' ? 'aspect-[4/3] rounded-xl' : 'aspect-square sm:aspect-[4/3] rounded-lg';
+              const nameText = displayScale === 'small' ? 'text-[11px]' : displayScale === 'large' ? 'text-sm sm:text-base' : 'text-xs sm:text-[13px]';
+              const barcodePadding = displayScale === 'small' ? 'py-0.5 px-1.5 mt-1 text-[9px]' : displayScale === 'large' ? 'py-1 px-2.5 mt-2 text-xs' : 'py-0.5 px-2 mt-1.5 text-[10px] sm:text-[11px]';
+              const plusBtnSize = displayScale === 'small' ? 'w-7 h-7' : displayScale === 'large' ? 'w-9 h-9 sm:w-10 sm:h-10' : 'w-8 h-8 sm:w-9 sm:h-9';
+              const priceText = displayScale === 'small' ? 'text-xs sm:text-sm' : displayScale === 'large' ? 'text-base sm:text-lg' : 'text-sm sm:text-base';
+
               return (
                 <div
                   key={p.id}
                   onClick={() => !isOutOfStock && handleAddToCart(p)}
-                  className={`group flex flex-col justify-between bg-white border p-2.5 sm:p-3 transition-all rounded-md select-none ${
+                  className={`group flex flex-col justify-between bg-white border ${cardPadding} transition-all rounded-xl select-none ${
                     isOutOfStock
                       ? 'border-zinc-200 opacity-55 cursor-not-allowed bg-zinc-50'
                       : inCartQty > 0
                       ? 'border-blue-600 ring-2 ring-blue-600/30 shadow-xs cursor-pointer'
-                      : 'border-zinc-300/80 hover:border-blue-500 hover:shadow-md shadow-2xs cursor-pointer active:scale-[0.99]'
+                      : 'border-zinc-200/90 hover:border-blue-500 hover:shadow-md shadow-2xs cursor-pointer active:scale-[0.99]'
                   }`}
                 >
-                  {/* Top Section: Image Container with White Border Stock Badge & Discount Badge */}
-                  <div className="relative w-full aspect-square sm:aspect-[4/3] bg-zinc-100 rounded-sm overflow-hidden shrink-0 border border-zinc-200/80">
+                  {/* Top Section: Image Container with Soft Stock Badge & Discount Badge */}
+                  <div className={`relative w-full ${imgAspect} bg-zinc-100 overflow-hidden shrink-0 border border-zinc-200/80`}>
                     <img
                       src={p.image || getSampleImageForProduct(p.nameKu || p.name, p.categoryId)}
                       alt={p.name}
@@ -1076,7 +1175,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
 
                     {/* Stock Badge – Emerald Green with White border */}
                     <div
-                      className={`absolute top-2 left-2 z-10 px-2.5 py-1 rounded-sm text-[11px] font-bold font-mono flex items-center gap-1.5 shadow-xs border-2 border-white leading-none ${
+                      className={`absolute top-1.5 left-1.5 z-10 px-2 py-0.5 rounded-md text-[10px] font-bold font-mono flex items-center gap-1 shadow-xs border-2 border-white leading-none ${
                         isOutOfStock
                           ? 'bg-zinc-600 text-white'
                           : isLowStock
@@ -1085,13 +1184,13 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                       }`}
                     >
                       <span>{remainingStock}</span>
-                      <Package className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <Package className="w-3 h-3 stroke-[2.5]" />
                     </div>
 
                     {/* Discount Badge on Top Right */}
                     {priceInfo.isDiscounted && (
-                      <div className="absolute top-2 right-2 z-10 bg-[#e1144a] text-white px-2 py-1 rounded-sm text-[10px] font-black font-mono flex items-center gap-1 shadow-sm border border-white leading-none">
-                        <Tag className="w-3 h-3 stroke-[2.5]" />
+                      <div className="absolute top-1.5 right-1.5 z-10 bg-[#e1144a] text-white px-1.5 py-0.5 rounded-md text-[9px] font-black font-mono flex items-center gap-1 shadow-xs border border-white leading-none">
+                        <Tag className="w-2.5 h-2.5 stroke-[2.5]" />
                         <span>-{Math.round(priceInfo.discountPercent)}%</span>
                       </div>
                     )}
@@ -1106,9 +1205,9 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                           setEditingImageProduct(p);
                           setNewImageUrl(p.image || '');
                         }}
-                        className="absolute top-2 right-2 z-10 bg-black/60 hover:bg-black text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-xs"
+                        className="absolute top-1.5 right-1.5 z-10 bg-black/60 hover:bg-black text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-xs"
                       >
-                        <Camera className="w-3.5 h-3.5" />
+                        <Camera className="w-3 h-3" />
                       </button>
                     )}
 
@@ -1125,7 +1224,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                     <div>
                       {/* Product Name – Under Image */}
                       <h3
-                        className={`font-bold leading-tight text-center w-full truncate px-1 text-xs sm:text-[13px] ${
+                        className={`font-bold leading-snug text-center w-full truncate px-0.5 ${nameText} ${
                           isOutOfStock ? 'text-zinc-400' : 'text-zinc-900'
                         }`}
                         title={lang === 'ku' ? (p.nameKu || p.name) : p.name}
@@ -1135,9 +1234,9 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
 
                       {/* Barcode / SKU Pill Box – Under Name */}
                       {(p.barcode || p.sku) && (
-                        <div className="mt-1.5 w-full bg-[#f1f5f9] border border-zinc-300/80 py-1 px-2.5 rounded-sm text-center shadow-2xs">
+                        <div className={`w-full bg-[#f1f5f9] border border-zinc-200/90 ${barcodePadding} rounded-md text-center shadow-2xs`}>
                           <span
-                            className="font-mono font-bold text-zinc-700 text-xs sm:text-[11px] tracking-wider select-all leading-none truncate block"
+                            className="font-mono font-bold text-zinc-700 tracking-wider select-all leading-none truncate block"
                             dir="ltr"
                           >
                             {p.barcode || p.sku}
@@ -1147,7 +1246,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                     </div>
 
                     {/* Bottom Row: + button on left, price on right (without currency symbol) */}
-                    <div dir="ltr" className="flex items-center justify-between gap-2 mt-2.5 pt-2 border-t border-zinc-100">
+                    <div dir="ltr" className="flex items-center justify-between gap-1.5 mt-2 pt-2 border-t border-zinc-100">
                       <button
                         type="button"
                         disabled={isOutOfStock}
@@ -1155,7 +1254,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                           e.stopPropagation();
                           if (!isOutOfStock) handleAddToCart(p);
                         }}
-                        className={`w-8 h-8 sm:w-9 sm:h-9 rounded-md flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-95 ${
+                        className={`${plusBtnSize} rounded-md flex items-center justify-center transition-all cursor-pointer shrink-0 active:scale-95 ${
                           isOutOfStock
                             ? 'bg-zinc-100 text-zinc-300 cursor-not-allowed'
                             : inCartQty > 0
@@ -1164,17 +1263,17 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                         }`}
                         title={lang === 'ku' ? 'زیادکردن بۆ سەبەتە' : 'Add to cart'}
                       >
-                        <Plus className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+                        <Plus className="w-4 h-4 stroke-[2.5]" />
                       </button>
 
                       <div className="flex flex-col items-end min-w-0">
                         {priceInfo.isDiscounted && (
-                          <span className="line-through text-zinc-400 font-mono font-bold text-[10px] sm:text-xs leading-none mb-0.5">
+                          <span className="line-through text-zinc-400 font-mono font-bold text-[10px] leading-none mb-0.5">
                             {Number(priceInfo.originalPrice || 0).toLocaleString()}
                           </span>
                         )}
                         <span
-                          className={`font-black font-mono leading-none shrink-0 min-w-0 truncate text-sm sm:text-base ${
+                          className={`font-black font-mono leading-none shrink-0 min-w-0 truncate ${priceText} ${
                             isOutOfStock
                               ? 'text-zinc-400'
                               : priceInfo.isDiscounted
@@ -1255,7 +1354,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                 setItemsPerPage(val);
                 setCurrentPage(1);
                 try {
-                  localStorage.setItem('pos_items_per_page', String(val));
+                  window.electronAPI?.db?.set('pos_items_per_page', val).catch(() => {});
                 } catch {}
               }}
               className="bg-zinc-50 border border-zinc-300 px-2 py-1 text-xs font-bold font-mono text-zinc-900 focus:outline-none rounded-none cursor-pointer"
@@ -1272,7 +1371,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
       </div>
 
       {/* Right POS Cart & Payment Panel */}
-      <div className="w-full md:w-[440px] lg:w-[480px] xl:w-[500px] bg-white flex flex-col h-full border-l rtl:border-r rtl:border-l-0 border-zinc-300 text-xs select-none shrink-0">
+      <div className="w-full md:w-[375px] lg:w-[400px] xl:w-[420px] bg-white flex flex-col h-full border-l rtl:border-r rtl:border-l-0 border-zinc-300 text-xs select-none shrink-0">
         {/* Customer & Pricing Tier Header */}
         <div className="p-4 bg-zinc-50 border-b border-zinc-300 space-y-3">
           <div className="flex items-center justify-between gap-2 relative">
@@ -1585,7 +1684,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                 setCartItems([]);
                 setDiscountValue(0);
                 try {
-                  localStorage.removeItem(getCashierCartKey(activeCashierId));
+                  window.electronAPI?.db?.delete(getCashierCartKey(activeCashierId)).catch(() => {});
                 } catch {}
               }}
               disabled={cartItems.length === 0}
@@ -1789,7 +1888,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                       }`}
                       title={lang === 'ku' ? 'داشکاندن بە بڕی پارە (دینار)' : 'Discount by Cash Amount'}
                     >
-                      {currency === 'USD' ? '$' : (lang === 'ku' ? 'د.ع' : 'IQD')}
+                      {currency === 'USD' ? '$' : (lang === 'ku' ? 'پارە' : 'IQD')}
                     </button>
                   </div>
                 </div>
@@ -1819,7 +1918,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                     />
                   </div>
                   <span className="text-[11px] font-bold text-zinc-500 shrink-0">
-                    {discountType === 'percent' ? '%' : (currency === 'USD' ? '$' : (lang === 'ku' ? 'د.ع' : 'IQD'))}
+                    {discountType === 'percent' ? '%' : (currency === 'USD' ? '$' : (lang === 'ku' ? '' : 'IQD'))}
                   </span>
                 </div>
               </div>
@@ -2051,7 +2150,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
               {paymentMethod === 'cash' ? (
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase font-bold text-zinc-500 block">
-                    {lang === 'ku' ? `بڕی وەرگیراو (${currency === 'IQD' ? 'د.ع' : '$'})` : `Cash Tendered (${currency === 'IQD' ? 'IQD' : '$'})`}
+                    {lang === 'ku' ? `بڕی وەرگیراو${currency === 'USD' ? ' ($)' : ''}` : `Cash Tendered (${currency === 'IQD' ? 'IQD' : '$'})`}
                   </label>
                   <input
                     type="number"
@@ -2072,7 +2171,7 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                         onClick={() => setCashTendered(currency === 'USD' ? amt * exchangeRate : amt)}
                         className="py-1.5 bg-zinc-100 hover:bg-zinc-200 border border-zinc-300 text-zinc-900 font-bold text-xs rounded-none"
                       >
-                        {currency === 'USD' ? `$${amt}` : `${amt.toLocaleString()} د.ع`}
+                        {currency === 'USD' ? `$${amt}` : (lang === 'ku' ? amt.toLocaleString() : `${amt.toLocaleString()} IQD`)}
                       </button>
                     ))}
                   </div>

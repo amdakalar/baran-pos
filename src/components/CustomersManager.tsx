@@ -670,7 +670,7 @@ export const CustomersManager: React.FC<CustomersManagerProps> = ({
             <form onSubmit={handleSaveEditPayment} className="space-y-4">
               <div>
                 <label className="text-[10px] uppercase font-bold text-zinc-600 block mb-1">
-                  {lang === 'ku' ? `بڕی پارەی وەرگیراو (${currency === 'IQD' ? 'د.ع' : '$'}) *` : `Amount Received (${currency === 'IQD' ? 'IQD' : '$'}) *`}
+                  {lang === 'ku' ? `بڕی پارەی وەرگیراو${currency === 'USD' ? ' ($)' : ''} *` : `Amount Received (${currency === 'IQD' ? 'IQD' : '$'}) *`}
                 </label>
                 <input
                   type="number"
@@ -773,7 +773,7 @@ export const CustomersManager: React.FC<CustomersManagerProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] uppercase font-bold text-zinc-600 block mb-1">
-                    {lang === 'ku' ? `بەرزترین سنووری قەرز (${currency === 'IQD' ? 'د.ع' : '$'})` : `Credit Limit (${currency === 'IQD' ? 'IQD' : '$'})`}
+                    {lang === 'ku' ? `بەرزترین سنووری قەرز${currency === 'USD' ? ' ($)' : ''}` : `Credit Limit (${currency === 'IQD' ? 'IQD' : '$'})`}
                   </label>
                   <input
                     type="number"
@@ -799,7 +799,7 @@ export const CustomersManager: React.FC<CustomersManagerProps> = ({
               <div className="grid grid-cols-2 gap-3 pt-2 border-t border-zinc-100">
                 <div>
                   <label className="text-[10px] uppercase font-bold text-rose-700 block mb-1">
-                    {lang === 'ku' ? `بڕی قەرزی سەرەتایی (${currency === 'IQD' ? 'د.ع' : '$'})` : `Initial Debt (${currency === 'IQD' ? 'IQD' : '$'})`}
+                    {lang === 'ku' ? `بڕی قەرزی سەرەتایی${currency === 'USD' ? ' ($)' : ''}` : `Initial Debt (${currency === 'IQD' ? 'IQD' : '$'})`}
                   </label>
                   <input
                     type="number"
@@ -901,7 +901,7 @@ export const CustomersManager: React.FC<CustomersManagerProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] uppercase font-bold text-zinc-700 block mb-1">
-                    {lang === 'ku' ? `بەرزترین سنووری قەرز (${currency === 'IQD' ? 'د.ع' : '$'})` : `Credit Limit (${currency === 'IQD' ? 'IQD' : '$'})`}
+                    {lang === 'ku' ? `بەرزترین سنووری قەرز${currency === 'USD' ? ' ($)' : ''}` : `Credit Limit (${currency === 'IQD' ? 'IQD' : '$'})`}
                   </label>
                   <input
                     type="number"
@@ -1022,7 +1022,7 @@ export const CustomersManager: React.FC<CustomersManagerProps> = ({
 
               <div>
                 <label className="text-[10px] uppercase font-bold text-rose-700 block mb-1">
-                  {lang === 'ku' ? `بڕی قەرزی نوێ (${currency === 'IQD' ? 'د.ع' : '$'}) *` : `New Debt Amount (${currency === 'IQD' ? 'IQD' : '$'}) *`}
+                  {lang === 'ku' ? `بڕی قەرزی نوێ${currency === 'USD' ? ' ($)' : ''} *` : `New Debt Amount (${currency === 'IQD' ? 'IQD' : '$'}) *`}
                 </label>
                 <input
                   type="number"
@@ -1112,7 +1112,7 @@ export const CustomersManager: React.FC<CustomersManagerProps> = ({
 
               <div>
                 <label className="text-[10px] uppercase font-bold text-rose-700 block mb-1 font-sans">
-                  {lang === 'ku' ? `بڕی نوێی قەرزی ئێستا (${currency === 'IQD' ? 'د.ع' : '$'}) *` : `New Current Debt Amount (${currency === 'IQD' ? 'IQD' : '$'}) *`}
+                  {lang === 'ku' ? `بڕی نوێی قەرزی ئێستا${currency === 'USD' ? ' ($)' : ''} *` : `New Current Debt Amount (${currency === 'IQD' ? 'IQD' : '$'}) *`}
                 </label>
                 <input
                   type="number"
@@ -1204,7 +1204,7 @@ export const CustomersManager: React.FC<CustomersManagerProps> = ({
 
               <div>
                 <label className="text-[10px] uppercase font-bold text-zinc-600 block mb-1">
-                  {lang === 'ku' ? `بڕی پارەی وەرگیراو (${currency === 'IQD' ? 'د.ع' : '$'}) *` : `Amount Received (${currency === 'IQD' ? 'IQD' : '$'}) *`}
+                  {lang === 'ku' ? `بڕی پارەی وەرگیراو${currency === 'USD' ? ' ($)' : ''} *` : `Amount Received (${currency === 'IQD' ? 'IQD' : '$'}) *`}
                 </label>
                 <input
                   type="number"

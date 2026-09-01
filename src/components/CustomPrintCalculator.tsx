@@ -361,7 +361,7 @@ export const CustomPrintCalculator: React.FC<CustomPrintCalculatorProps> = ({
                 <label className="text-[11px] font-bold text-zinc-900 flex items-center justify-between mb-1">
                   <span className="flex items-center gap-1.5">
                     <Edit3 className="w-3.5 h-3.5 text-zinc-700" />
-                    {lang === 'ku' ? `دیاریکردنی دەستیی نرخی لاپەڕە (${currency === 'IQD' ? 'د.ع' : '$'})` : `Manual Price per Page (${currency === 'IQD' ? 'IQD' : '$'})`}
+                    {lang === 'ku' ? `دیاریکردنی دەستیی نرخی لاپەڕە${currency === 'USD' ? ' ($)' : ''}` : `Manual Price per Page (${currency === 'IQD' ? 'IQD' : '$'})`}
                   </span>
                   <span className="text-[10px] text-zinc-500 font-mono font-normal">
                     {lang === 'ku' ? `ئۆتۆماتیک: ${formatCurrency(breakdown.defaultUnitPagePrice, currency, lang, exchangeRate)}` : `Auto: ${formatCurrency(breakdown.defaultUnitPagePrice, currency, lang, exchangeRate)}`}
@@ -444,7 +444,7 @@ export const CustomPrintCalculator: React.FC<CustomPrintCalculatorProps> = ({
                 <label className="text-[11px] font-bold text-zinc-900 flex items-center justify-between mb-1">
                   <span className="flex items-center gap-1.5">
                     <Edit3 className="w-3.5 h-3.5 text-zinc-700" />
-                    {lang === 'ku' ? `دیاریکردنی دەستیی تێچووی سەحافە (${currency === 'IQD' ? 'د.ع' : '$'})` : `Manual Binding Cost (${currency === 'IQD' ? 'IQD' : '$'})`}
+                    {lang === 'ku' ? `دیاریکردنی دەستیی تێچووی سەحافە${currency === 'USD' ? ' ($)' : ''}` : `Manual Binding Cost (${currency === 'IQD' ? 'IQD' : '$'})`}
                   </span>
                 </label>
                 <input
@@ -494,7 +494,7 @@ export const CustomPrintCalculator: React.FC<CustomPrintCalculatorProps> = ({
                 <label className="text-[11px] font-bold text-zinc-900 flex items-center justify-between mb-1">
                   <span className="flex items-center gap-1.5">
                     <Edit3 className="w-3.5 h-3.5 text-zinc-700" />
-                    {lang === 'ku' ? `دیاریکردنی دەستیی تێچووی لامینات و خزمەتگوزاری زیاده (${currency === 'IQD' ? 'د.ع' : '$'})` : `Manual Lamination / Finishing Cost (${currency === 'IQD' ? 'IQD' : '$'})`}
+                    {lang === 'ku' ? `دیاریکردنی دەستیی تێچووی لامینات و خزمەتگوزاری زیاده${currency === 'USD' ? ' ($)' : ''}` : `Manual Lamination / Finishing Cost (${currency === 'IQD' ? 'IQD' : '$'})`}
                   </span>
                 </label>
                 <input
@@ -654,7 +654,7 @@ export const CustomPrintCalculator: React.FC<CustomPrintCalculatorProps> = ({
                     <label className="text-[11px] font-bold text-zinc-900 flex items-center justify-between">
                       <span className="flex items-center gap-1">
                         <Edit3 className="w-3.5 h-3.5 text-zinc-700" />
-                        {lang === 'ku' ? `دیاریکردنی دەستیی کۆی گشتی نرخ (${currency === 'IQD' ? 'د.ع' : '$'})` : `Direct Lump-Sum Price Override (${currency === 'IQD' ? 'IQD' : '$'})`}
+                        {lang === 'ku' ? `دیاریکردنی دەستیی کۆی گشتی نرخ${currency === 'USD' ? ' ($)' : ''}` : `Direct Lump-Sum Price Override (${currency === 'IQD' ? 'IQD' : '$'})`}
                       </span>
                     </label>
                     <input

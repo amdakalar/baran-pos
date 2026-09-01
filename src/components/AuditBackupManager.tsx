@@ -1,6 +1,12 @@
 import React from 'react';
 import { ShieldAlert, Download, Upload, RefreshCw, Database, FileSpreadsheet, CheckCircle2, Wifi, WifiOff } from 'lucide-react';
 import { AuditLog, Product, SalesInvoice, Customer, Supplier } from '../types';
+import {
+  formatAuditAction,
+  formatAuditCategory,
+  formatAuditDetails,
+  formatAuditTime,
+} from '../utils/auditHelper';
 
 interface AuditBackupManagerProps {
   auditLogs: AuditLog[];
@@ -145,23 +151,29 @@ export const AuditBackupManager: React.FC<AuditBackupManagerProps> = ({
                   <tr>
                     <th className="p-3 text-start">{lang === 'ku' ? 'کات و بەروار' : 'Timestamp'}</th>
                     <th className="p-3 text-start">{lang === 'ku' ? 'بەکارهێنەر' : 'User'}</th>
-                    <th className="p-3 text-start">{lang === 'ku' ? 'کردار' : 'Action'}</th>
-                    <th className="p-3 text-start">{lang === 'ku' ? 'وردەکاری' : 'Details'}</th>
+                    <th className="p-3 text-start">{lang === 'ku' ? 'جۆری کردار' : 'Action'}</th>
+                    <th className="p-3 text-start">{lang === 'ku' ? 'وردەکاری چالاکی' : 'Activity Details'}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-200 font-mono">
-                  {auditLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-zinc-50 transition-colors">
-                      <td className="p-3 text-zinc-500 font-bold whitespace-nowrap">{new Date(log.timestamp).toLocaleString()}</td>
-                      <td className="p-3 font-bold text-zinc-900 font-sans whitespace-nowrap">{log.user}</td>
-                      <td className="p-3 whitespace-nowrap">
-                        <span className="px-2 py-0.5 bg-zinc-100 border border-zinc-300 text-zinc-800 font-bold text-[10px] uppercase rounded-none">
-                          {log.action}
-                        </span>
-                      </td>
-                      <td className="p-3 text-zinc-700 font-sans">{log.details}</td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-zinc-200 font-sans text-xs">
+                  {auditLogs.map((log, idx) => {
+                    const actionInfo = formatAuditAction(log.action, lang);
+                    const detailsInfo = formatAuditDetails(log.details, log.action, lang);
+                    const timeInfo = formatAuditTime(log.timestamp, lang);
+
+                    return (
+                      <tr key={log.id ? `${log.id}-${idx}` : `log-${idx}`} className="hover:bg-zinc-50 transition-colors">
+                        <td className="p-3 text-zinc-500 font-mono text-[11px] font-bold whitespace-nowrap">{timeInfo}</td>
+                        <td className="p-3 font-bold text-zinc-900 whitespace-nowrap">{log.user}</td>
+                        <td className="p-3 whitespace-nowrap">
+                          <span className={`px-2 py-0.5 border text-[11px] font-bold ${actionInfo.bg} ${actionInfo.text} ${actionInfo.border}`}>
+                            {actionInfo.label}
+                          </span>
+                        </td>
+                        <td className="p-3 text-zinc-800 font-medium leading-relaxed">{detailsInfo}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

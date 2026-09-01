@@ -26,8 +26,10 @@ import {
   EyeOff,
   CheckCircle2,
   X,
+  Sparkles,
 } from 'lucide-react';
 import { User, NavigationTab, SystemConfig } from '../types';
+import { AppUpdateInfo } from '../utils/version';
 
 interface SidebarProps {
   currentUser: User;
@@ -44,6 +46,10 @@ interface SidebarProps {
   requireLoginPin?: boolean;
   onLockSystem?: () => void;
   systemConfig?: SystemConfig;
+  licenseStatus?: any;
+  cloudStatus?: any;
+  appUpdateAvailable?: AppUpdateInfo | null;
+  onOpenUpdateModal?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -61,14 +67,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   requireLoginPin,
   onLockSystem,
   systemConfig,
+  licenseStatus,
+  cloudStatus,
+  appUpdateAvailable,
+  onOpenUpdateModal,
 }) => {
-  const [isCollapsed, setIsCollapsed] = React.useState<boolean>(() => {
-    try {
-      return localStorage.getItem('sidebar_collapsed') === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const [isCollapsed, setIsCollapsed] = React.useState<boolean>(false);
 
   const [showUserDropdown, setShowUserDropdown] = React.useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
@@ -119,13 +123,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }, [showUserDropdown]);
 
   const toggleCollapse = () => {
-    setIsCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('sidebar_collapsed', String(next));
-      } catch {}
-      return next;
-    });
+    setIsCollapsed((prev) => !prev);
   };
 
   const navItems = [
@@ -232,6 +230,77 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const shopTitleKu = systemConfig?.shopNameKu || 'پەراوگەی باران';
   const shopTitleEn = systemConfig?.shopNameEn || 'Baran Stationery POS';
+  const displayScale = systemConfig?.displayScale || 'medium';
+
+  // Dynamic Scale Styling Configs for Small / Medium / Large
+  const scale = {
+    small: {
+      asideWidth: isCollapsed ? 'w-16' : 'w-56',
+      headerPadding: isCollapsed ? 'pt-3 pb-2.5 px-1.5' : 'pt-3 pb-2.5 px-3',
+      logoBox: 'w-8 h-8 rounded-lg p-0.5',
+      titleText: 'text-xs font-black',
+      subtitleText: 'text-[9px]',
+      toggleBtn: 'w-7 h-7 rounded-md',
+      toggleIcon: 'w-3.5 h-3.5',
+      navPadding: isCollapsed ? 'p-2' : 'px-2.5 py-1.5 text-[11px]',
+      navGap: 'gap-2',
+      navIconSize: 'w-3.5 h-3.5',
+      navSpaceY: 'space-y-0.5',
+      navContainerPadding: 'p-1.5',
+      shortcutBadge: 'text-[9px] px-1 py-0.2',
+      counterBadge: 'text-[8px] px-1.5 py-0.2',
+      footerPadding: isCollapsed ? 'p-1.5' : 'p-2',
+      userCardPadding: isCollapsed ? 'p-1' : 'p-1.5 px-2',
+      userRoleLabel: 'text-[8px]',
+      userNameText: 'text-[11px] font-black',
+      userIconBox: 'w-7 h-7 rounded-lg',
+      userIconSize: 'w-3.5 h-3.5',
+    },
+    medium: {
+      asideWidth: isCollapsed ? 'w-20' : 'w-64',
+      headerPadding: isCollapsed ? 'pt-4 pb-3.5 px-2' : 'pt-3.5 pb-3 px-3.5',
+      logoBox: 'w-10 h-10 rounded-xl p-1',
+      titleText: 'text-sm font-black',
+      subtitleText: 'text-[10px]',
+      toggleBtn: 'w-8 h-8 rounded-lg',
+      toggleIcon: 'w-4 h-4',
+      navPadding: isCollapsed ? 'p-2.5' : 'px-3 py-2 text-xs',
+      navGap: 'gap-2.5',
+      navIconSize: 'w-4 h-4',
+      navSpaceY: 'space-y-1',
+      navContainerPadding: 'p-2',
+      shortcutBadge: 'text-[10px] px-1.5 py-0.5',
+      counterBadge: 'text-[9px] px-1.5 py-0.5',
+      footerPadding: isCollapsed ? 'p-2' : 'p-2.5',
+      userCardPadding: isCollapsed ? 'p-1.5' : 'p-1.5 px-2.5',
+      userRoleLabel: 'text-[9px]',
+      userNameText: 'text-xs font-black',
+      userIconBox: 'w-8 h-8 rounded-xl',
+      userIconSize: 'w-4 h-4',
+    },
+    large: {
+      asideWidth: isCollapsed ? 'w-24' : 'w-72',
+      headerPadding: isCollapsed ? 'pt-5 pb-4 px-2.5' : 'pt-4 pb-3.5 px-4',
+      logoBox: 'w-12 h-12 rounded-xl p-1',
+      titleText: 'text-base font-black',
+      subtitleText: 'text-xs',
+      toggleBtn: 'w-9 h-9 rounded-lg',
+      toggleIcon: 'w-4.5 h-4.5',
+      navPadding: isCollapsed ? 'p-3' : 'px-3.5 py-2.5 text-sm',
+      navGap: 'gap-3',
+      navIconSize: 'w-4.5 h-4.5',
+      navSpaceY: 'space-y-1.5',
+      navContainerPadding: 'p-2.5',
+      shortcutBadge: 'text-[11px] px-2 py-0.5',
+      counterBadge: 'text-[10px] px-2 py-0.5',
+      footerPadding: isCollapsed ? 'p-2.5' : 'p-3',
+      userCardPadding: isCollapsed ? 'p-2' : 'p-2 px-3',
+      userRoleLabel: 'text-[10px]',
+      userNameText: 'text-sm font-black',
+      userIconBox: 'w-9 h-9 rounded-xl',
+      userIconSize: 'w-4.5 h-4.5',
+    },
+  }[displayScale];
 
   // Format Role Display String
   const getRoleDisplayName = (user: User) => {
@@ -246,27 +315,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside
-      className={`bg-[#f1f3f5] border-l rtl:border-l rtl:border-r-0 border-slate-300 flex flex-col h-screen select-none shrink-0 text-slate-800 font-sans transition-all duration-200 z-30 shadow-sm overflow-hidden ${
-        isCollapsed ? 'w-20' : 'w-64'
+      className={`bg-[#f8fafc] border-l rtl:border-l rtl:border-r-0 border-slate-200/90 flex flex-col h-screen select-none shrink-0 text-slate-800 font-sans transition-all duration-200 z-30 shadow-xs overflow-hidden ${
+        scale.asideWidth
       }`}
       dir={lang === 'ku' ? 'rtl' : 'ltr'}
     >
-      {/* ── Top Header Banner (Exact match to media_1787677005619.png) ── */}
+      {/* ── Top Header Banner ── */}
       <div className={`border-b border-slate-200/80 transition-all shrink-0 ${
-        isCollapsed ? 'pt-4 pb-3.5 px-2 flex flex-col items-center gap-2.5' : 'pt-4 pb-3.5 px-3.5'
+        isCollapsed ? `${scale.headerPadding} flex flex-col items-center gap-2` : scale.headerPadding
       }`}>
         {!isCollapsed ? (
-          <div className="flex items-center justify-between gap-2.5">
+          <div className="flex items-center justify-between gap-2">
             {/* Right in RTL: Logo Box + Store Title */}
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <div className="w-10 h-10 rounded-lg bg-[#4f46e5] text-white flex items-center justify-center shadow-xs shrink-0">
-                <Store className="w-5 h-5 stroke-[2.2]" />
+              <div className={`${scale.logoBox} overflow-hidden bg-white border border-slate-200/90 flex items-center justify-center shadow-2xs shrink-0`}>
+                <img src="./icon.png" alt="Logo" className="w-full h-full object-contain" />
               </div>
               <div className="min-w-0 flex-1">
-                <h1 className="text-sm font-black tracking-tight leading-tight text-slate-900 truncate" title={shopTitleKu}>
+                <h1 className={`${scale.titleText} tracking-tight leading-tight text-slate-900 truncate`} title={shopTitleKu}>
                   {shopTitleKu}
                 </h1>
-                <p className="text-[10px] font-bold text-[#4f46e5] tracking-tight truncate mt-0.5" title={shopTitleEn}>
+                <p className={`${scale.subtitleText} font-bold text-indigo-600 tracking-tight truncate mt-0.5`} title={shopTitleEn}>
                   {shopTitleEn}
                 </p>
               </div>
@@ -276,31 +345,52 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               type="button"
               onClick={toggleCollapse}
-              className="w-8 h-8 rounded-md bg-white border border-slate-300 flex items-center justify-center text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer shadow-2xs shrink-0"
+              className={`${scale.toggleBtn} bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 transition-colors cursor-pointer shadow-2xs shrink-0 flex items-center justify-center`}
               title={lang === 'ku' ? 'بچووککردنەوەی سایدبار' : 'Collapse Sidebar'}
             >
-              <PanelLeftClose className="w-4 h-4 rtl:rotate-180" />
+              <PanelLeftClose className={`${scale.toggleIcon} rtl:rotate-180`} />
             </button>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-[#4f46e5] text-white flex items-center justify-center shadow-xs shrink-0">
-              <Store className="w-5 h-5 stroke-[2.2]" />
+            <div className={`${scale.logoBox} overflow-hidden bg-white border border-slate-200/90 flex items-center justify-center shadow-2xs shrink-0`}>
+              <img src="./icon.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <button
               type="button"
               onClick={toggleCollapse}
-              className="w-7 h-7 rounded-md bg-white border border-slate-300 flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
+              className={`${scale.toggleBtn} bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 transition-colors cursor-pointer shadow-2xs flex items-center justify-center`}
               title={lang === 'ku' ? 'گەورەکردنی سایدبار' : 'Expand Sidebar'}
             >
-              <PanelLeft className="w-3.5 h-3.5 rtl:rotate-180" />
+              <PanelLeft className={`${scale.toggleIcon} rtl:rotate-180`} />
+            </button>
+          </div>
+        )}
+
+        {/* ── App Update Available Notification Badge ── */}
+        {appUpdateAvailable && (
+          <div className="mt-2.5">
+            <button
+              type="button"
+              onClick={onOpenUpdateModal}
+              className={`w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-[0.98] text-white font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-amber-400/50 ${
+                isCollapsed ? 'p-2' : 'px-2.5 py-1.5 text-[11px]'
+              }`}
+              title={lang === 'ku' ? `وەشانی نوێ بەردەستە (v${appUpdateAvailable.version}) - کرتە بکە بۆ نوێکردنەوە` : `New update available (v${appUpdateAvailable.version}) - Click to update`}
+            >
+              <Sparkles className="w-3.5 h-3.5 shrink-0 text-amber-200 animate-pulse" />
+              {!isCollapsed && (
+                <span className="truncate font-black">
+                  {lang === 'ku' ? `نوێکردنەوە v${appUpdateAvailable.version}` : `Update v${appUpdateAvailable.version}`}
+                </span>
+              )}
             </button>
           </div>
         )}
       </div>
 
-      {/* ── Navigation Menu Items (Exact match to media_1787677005619.png) ── */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden p-2 space-y-0.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      {/* ── Navigation Menu Items ── */}
+      <nav className={`flex-1 overflow-y-auto overflow-x-hidden ${scale.navContainerPadding} ${scale.navSpaceY} [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`}>
         {visibleNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentTab === item.id;
@@ -312,41 +402,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 type="button"
                 onClick={() => onSelectTab(item.id)}
                 className={`w-full relative flex items-center ${
-                  isCollapsed ? 'justify-center p-2.5' : 'justify-between px-3 py-2 text-xs'
-                } font-bold rounded-md transition-all cursor-pointer ${
+                  isCollapsed ? `justify-center ${scale.navPadding}` : `justify-between ${scale.navPadding}`
+                } font-bold rounded-xl transition-all cursor-pointer ${
                   isActive
-                    ? 'bg-[#e2e8f0] text-slate-900'
-                    : 'text-[#475569] hover:bg-[#e9ecef] hover:text-slate-900'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-200/60 hover:text-slate-900'
                 }`}
                 title={isCollapsed ? label : undefined}
               >
-                {/* Active Indigo Indicator Bar on the edge */}
+                {/* Active Indicator Bar on the edge */}
                 {isActive && (
-                  <span className="absolute top-1 bottom-1 right-0 rtl:right-0 rtl:left-auto w-1 bg-[#4f46e5] rounded-l-md" />
+                  <span className="absolute top-1.5 bottom-1.5 right-0 rtl:right-0 rtl:left-auto w-1 bg-indigo-500 rounded-l-full" />
                 )}
 
                 {/* Right side in RTL: Icon + Label */}
-                <div className="flex items-center gap-2.5 truncate">
+                <div className={`flex items-center ${scale.navGap} truncate`}>
                   <Icon
-                    className={`w-4 h-4 shrink-0 transition-colors ${
-                      isActive ? 'text-[#4f46e5]' : 'text-slate-600 group-hover:text-slate-800'
+                    className={`${scale.navIconSize} shrink-0 transition-colors ${
+                      isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-800'
                     }`}
                   />
                   {!isCollapsed && (
-                    <span className={`truncate text-xs ${isActive ? 'font-black text-slate-900' : 'font-bold text-slate-700'}`}>
+                    <span className={`truncate ${isActive ? 'font-black text-white' : 'font-bold text-slate-700 group-hover:text-slate-900'}`}>
                       {label}
                     </span>
                   )}
                 </div>
 
-                {/* Left side in RTL: Shortcut Badge (e.g. F1, F4) or Counter Badge */}
+                {/* Left side in RTL: Shortcut Badge (e.g. F1) or Counter Badge */}
                 {!isCollapsed && (
                   <div className="flex items-center gap-1.5">
                     {item.shortcut && (
-                      <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded shadow-2xs ${
+                      <span className={`${scale.shortcutBadge} font-mono font-black rounded-md shadow-2xs ${
                         isActive
-                          ? 'bg-[#4f46e5] text-white'
-                          : 'bg-slate-200/90 text-slate-600 group-hover:bg-slate-300'
+                          ? 'bg-slate-800 text-slate-200 border border-slate-700/80'
+                          : 'bg-slate-200/80 text-slate-600 group-hover:bg-slate-300/80'
                       }`}>
                         {item.shortcut}
                       </span>
@@ -354,7 +444,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     {item.badge && !item.shortcut && (
                       <span
-                        className={`text-[9px] px-1.5 py-0.2 font-mono font-black rounded-md ${
+                        className={`${scale.counterBadge} font-mono font-black rounded-full ${
                           item.badgeColor || 'bg-indigo-600 text-white'
                         }`}
                       >
@@ -376,11 +466,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
               {/* Collapsed Hover Tooltip */}
               {isCollapsed && (
-                <div className="absolute z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-700 shadow-xl whitespace-nowrap top-1/2 -translate-y-1/2 start-full ms-2">
+                <div className="absolute z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl border border-slate-700 shadow-xl whitespace-nowrap top-1/2 -translate-y-1/2 start-full ms-2">
                   <div className="flex items-center gap-2">
                     <span>{label}</span>
                     {item.shortcut && (
-                      <span className="text-[9px] font-mono px-1 py-0.2 bg-indigo-600 text-white rounded">
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 bg-indigo-600 text-white rounded-md">
                         {item.shortcut}
                       </span>
                     )}
@@ -395,23 +485,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* ── Active User / Role Footer ── */}
       <div 
         ref={dropdownRef}
-        className={`bg-[#f1f3f5] border-t border-slate-300/80 relative text-xs font-sans ${
-          isCollapsed ? 'p-2' : 'p-2.5'
-        }`}
+        className={`bg-[#f8fafc] border-t border-slate-200/90 relative text-xs font-sans ${scale.footerPadding}`}
       >
         {/* User Card */}
         <div
           className={`relative group flex items-center ${
-            isCollapsed ? 'justify-center p-1.5' : 'justify-between gap-1.5 p-1.5 px-2'
+            isCollapsed ? `justify-center ${scale.userCardPadding}` : `justify-between gap-1.5 ${scale.userCardPadding}`
           } ${
             isManager && currentTab === 'admin'
-              ? 'bg-[#e2e8f0] border-indigo-400 text-slate-900 shadow-xs ring-1 ring-indigo-400/40'
-              : 'bg-white border-slate-300 hover:border-indigo-400 hover:shadow-xs text-slate-800'
-          } border rounded-lg shadow-2xs transition-all`}
+              ? 'bg-slate-900 border-slate-900 text-white shadow-xs ring-1 ring-slate-800'
+              : 'bg-white border-slate-200/90 hover:border-indigo-300 hover:shadow-xs text-slate-800'
+          } border rounded-xl shadow-2xs transition-all`}
         >
           {/* Active indicator bar on edge when admin tab is open */}
           {isManager && currentTab === 'admin' && (
-            <span className="absolute top-1 bottom-1 right-0 rtl:right-0 rtl:left-auto w-1 bg-[#4f46e5] rounded-l-md" />
+            <span className="absolute top-1.5 bottom-1.5 right-0 rtl:right-0 rtl:left-auto w-1 bg-indigo-500 rounded-l-full" />
           )}
 
           {/* Chevron Dropdown Button on Left (in RTL) to switch account */}
@@ -422,10 +510,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 e.stopPropagation();
                 setShowUserDropdown(!showUserDropdown);
               }}
-              className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded transition-colors cursor-pointer shrink-0"
+              className={`p-1 rounded-md transition-colors cursor-pointer shrink-0 ${
+                isManager && currentTab === 'admin'
+                  ? 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-100'
+              }`}
               title={lang === 'ku' ? 'گۆڕینی هەژمار' : 'Switch Account'}
             >
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showUserDropdown ? 'rotate-180 text-indigo-600' : ''}`} />
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showUserDropdown ? 'rotate-180 text-indigo-500' : ''}`} />
             </button>
           )}
 
@@ -442,13 +534,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Center Info: دیاریکردنی ڕۆڵی بەکارهێنەر + خاوەنکار (Owner) / کارمەند */}
             {!isCollapsed && (
               <div className="min-w-0 flex-1 text-start">
-                <span className="text-[9px] font-bold text-slate-400 block leading-tight">
-                  {lang === 'ku' ? 'دیاریکردنی ڕۆڵی بەکارهێنەر:' : 'User Role Selected:'}
+                <span className={`font-bold block leading-tight ${scale.userRoleLabel} ${
+                  isManager && currentTab === 'admin' ? 'text-slate-400' : 'text-slate-400'
+                }`}>
+                  {lang === 'ku' ? 'ڕۆڵی بەکارهێنەر:' : 'User Role Selected:'}
                 </span>
-                <span className={`text-xs font-black block leading-tight mt-0.5 truncate transition-colors ${
+                <span className={`block leading-tight mt-0.5 truncate transition-colors ${scale.userNameText} ${
                   isManager && currentTab === 'admin'
-                    ? 'text-[#4f46e5]'
-                    : 'text-[#4f46e5] group-hover:text-indigo-700'
+                    ? 'text-indigo-400'
+                    : 'text-indigo-600 group-hover:text-indigo-700'
                 }`}>
                   {getRoleDisplayName(currentUser)}
                 </span>
@@ -456,18 +550,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
 
             {/* User Icon Box on Right (in RTL) */}
-            <div className={`w-8 h-8 rounded-md flex items-center justify-center shrink-0 transition-all shadow-2xs ${
+            <div className={`${scale.userIconBox} flex items-center justify-center shrink-0 transition-all shadow-2xs ${
               isManager && currentTab === 'admin'
-                ? 'bg-[#4f46e5] text-white border border-[#4f46e5]'
-                : 'bg-indigo-50 border border-indigo-100 text-[#4f46e5] group-hover:bg-[#4f46e5] group-hover:text-white'
+                ? 'bg-slate-800 text-indigo-400 border border-slate-700'
+                : 'bg-indigo-50 border border-indigo-100 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white'
             }`}>
-              <UserIcon className="w-4 h-4 stroke-[2.2]" />
+              <UserIcon className={`${scale.userIconSize} stroke-[2.2]`} />
             </div>
           </div>
 
           {/* Collapsed Hover Tooltip */}
           {isCollapsed && (
-            <div className="absolute z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg border border-slate-700 shadow-xl whitespace-nowrap top-1/2 -translate-y-1/2 start-full ms-2">
+            <div className="absolute z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl border border-slate-700 shadow-xl whitespace-nowrap top-1/2 -translate-y-1/2 start-full ms-2">
               <span>
                 {isManager
                   ? (lang === 'ku' ? 'بەشی بەڕێوەبردن (Admin Panel)' : 'Admin Panel')
@@ -477,9 +571,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
+        {/* License Plan & Cloud Status Badges */}
+        {!isCollapsed && licenseStatus && licenseStatus.valid && (
+          <div className="mt-1.5 space-y-1">
+            <div className="px-2 py-1 rounded-lg bg-slate-100/80 border border-slate-200/90 flex items-center justify-between text-[10px]">
+              <div className="flex items-center gap-1 font-bold text-slate-700 truncate">
+                <span>{licenseStatus.isLifetime ? '👑' : '⏳'}</span>
+                <span className="truncate">{licenseStatus.planNameKu || 'مۆڵەتی باران'}</span>
+              </div>
+              <span className={`font-mono font-black px-1.5 py-0.2 rounded-md text-[9px] shrink-0 ${
+                licenseStatus.isLifetime
+                  ? 'bg-emerald-600 text-white'
+                  : licenseStatus.daysRemaining && licenseStatus.daysRemaining <= 10
+                  ? 'bg-rose-500 text-white'
+                  : 'bg-indigo-600 text-white'
+              }`}>
+                {licenseStatus.isLifetime ? 'هەمیشەیی' : `${licenseStatus.daysRemaining} ڕۆژ`}
+              </span>
+            </div>
+
+            {/* Cloud Status Indicator */}
+            {cloudStatus && (
+              <div className={`px-2 py-0.5 rounded-lg flex items-center justify-between text-[9px] font-bold ${
+                cloudStatus.isOnline
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
+                  : cloudStatus.state === 'offline_warning'
+                  ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
+                  : 'bg-slate-100 text-slate-600 border border-slate-200/80'
+              }`}>
+                <span className="flex items-center gap-1">
+                  <span className={`w-1.5 h-1.5 rounded-full ${cloudStatus.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
+                  <span>{cloudStatus.isOnline ? 'کلاود چالاکە' : 'ئۆفلاین'}</span>
+                </span>
+                {!cloudStatus.isOnline && cloudStatus.remainingSeconds > 0 && (
+                  <span className="font-mono text-[8px]">
+                    {Math.floor(cloudStatus.remainingSeconds / 3600)} کاتژمێر
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* User Switch Dropdown Modal / Popup */}
         {showUserDropdown && (
-          <div className={`absolute bottom-full mb-2 bg-white border border-slate-200 shadow-xl z-50 p-2 rounded-xl ${
+          <div className={`absolute bottom-full mb-2 bg-white border border-slate-200/90 shadow-xl z-50 p-2 rounded-2xl ${
             isCollapsed ? 'start-full ms-2 w-56' : 'left-2.5 right-2.5'
           }`}>
             <div className="text-[10px] font-mono text-slate-400 mb-2 font-bold uppercase tracking-wider px-1.5 flex items-center justify-between border-b border-slate-100 pb-1.5">

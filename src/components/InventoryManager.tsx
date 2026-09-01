@@ -27,6 +27,7 @@ import {
 import { Product, Category, Brand, ItemType, StockAdjustment, UnitType } from '../types';
 import { Currency, formatCurrency } from '../utils/currency';
 import { getSampleImageForProduct } from '../utils/productImages';
+import { normalizeBarcode } from '../utils/barcodeScanner';
 
 interface InventoryManagerProps {
   products: Product[];
@@ -120,10 +121,11 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
 
   // Filtered Products
   const filteredProducts = products.filter((p) => {
+    const cleanSearch = normalizeBarcode(search).toLowerCase();
     const matchesSearch = 
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       (p.nameKu && p.nameKu.includes(search)) ||
-      (p.barcode && p.barcode.includes(search)) ||
+      (p.barcode && normalizeBarcode(p.barcode).toLowerCase().includes(cleanSearch)) ||
       (p.sku && p.sku.toLowerCase().includes(search.toLowerCase()));
 
     const matchesCat = selectedCat === 'all' || p.categoryId === selectedCat;

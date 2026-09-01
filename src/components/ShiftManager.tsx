@@ -520,7 +520,7 @@ export const ShiftManager: React.FC<ShiftManagerProps> = ({
               {/* Actual Cash Input */}
               <div>
                 <label className="font-bold text-zinc-800 block mb-1.5">
-                  {t(`بڕی پارەی ژمێردراوی نەقد (${currency === 'IQD' ? 'د.ع' : '$'})`, `Actual Cash Counted (${currency})`)}
+                  {t(`بڕی پارەی ژمێردراوی نەقد${currency === 'USD' ? ' ($)' : ''}`, `Actual Cash Counted (${currency})`)}
                 </label>
                 <input
                   type="number"
@@ -596,7 +596,7 @@ export const ShiftManager: React.FC<ShiftManagerProps> = ({
             <form onSubmit={handleOpenShiftSubmit} className="p-5 space-y-4 text-xs">
               <div>
                 <label className="font-bold text-zinc-800 block mb-1.5">
-                  {t(`پارەی دەستپێکی سندوق (${currency === 'IQD' ? 'د.ع' : '$'})`, `Starting Float Cash (${currency})`)}
+                  {t(`پارەی دەستپێکی سندوق${currency === 'USD' ? ' ($)' : ''}`, `Starting Float Cash (${currency})`)}
                 </label>
                 <input
                   type="number"

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>دروستکەری کلیلی مۆڵەتنامە — باران POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Noto Kufi Arabic', system-ui, -apple-system, sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-[#09090b] text-zinc-100 min-h-screen flex items-center justify-center p-4 sm:p-6 select-none">
+  
+  <div class="w-full max-w-[520px] bg-[#121215] border border-zinc-800/90 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-black/80 my-auto">
+    
+    <!-- Top Header -->
+    <div class="text-center mb-6">
+      <div class="mx-auto mb-3.5 w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 p-2 flex items-center justify-center shadow-inner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-7 h-7 text-indigo-400">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+        </svg>
+      </div>
+      <h1 class="text-lg sm:text-xl font-extrabold text-white tracking-tight">
+        بەڕێوەبەری مۆڵەتنامەی باران POS
+      </h1>
+      <p class="text-xs text-zinc-400 mt-1">
+        ئامرازی خاوەن پرۆژە بۆ دروستکردنی کلیلی چالاککردن
+      </p>
+    </div>
+
+    <div class="space-y-4">
+
+      <!-- Step 1: Hardware ID Input -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between text-xs">
+          <label class="font-semibold text-zinc-300">١. ناسنامەی ئامێر (Hardware ID ی کڕیار)</label>
+          <span class="text-[11px] text-zinc-500 font-normal">کۆدە ٦٤ پیتییەکە لێرە دانێ</span>
+        </div>
+        <input 
+          type="text" 
+          id="hardwareIdInput" 
+          placeholder="نموونە: a2ee7f981ce6aadb47e8a93ce..." 
+          class="w-full h-11 bg-zinc-950/90 border border-zinc-800 rounded-xl px-3.5 text-xs text-zinc-200 placeholder-zinc-700 focus:outline-none focus:border-indigo-500 font-mono tracking-tight transition-colors"
+          dir="ltr"
+        />
+      </div>
+
+      <!-- Step 2: Plan Selection -->
+      <div class="space-y-1.5 pt-1">
+        <label class="block text-xs font-semibold text-zinc-300">
+          ٢. هەڵبژاردنی پلانی مۆڵەتنامە
+        </label>
+        
+        <div class="grid grid-cols-1 gap-1.5" id="planGrid">
+          
+          <!-- Plan: 7 Days Trial -->
+          <label class="relative flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-zinc-800/80 bg-zinc-950/60 hover:bg-zinc-900/60 cursor-pointer transition-all has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-950/20">
+            <input type="radio" name="plan" value="T07" class="sr-only" />
+            <div class="flex items-center gap-2.5">
+              <span class="w-2 h-2 rounded-full bg-zinc-600"></span>
+              <span class="text-xs font-medium text-zinc-200">٧ ڕۆژ (تاقیکردنەوە)</span>
+            </div>
+            <span class="text-[11px] font-mono font-medium text-emerald-400">بێ بەرامبەر</span>
+          </label>
+
+          <!-- Plan: 3 Months -->
+          <label class="relative flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-zinc-800/80 bg-zinc-950/60 hover:bg-zinc-900/60 cursor-pointer transition-all has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-950/20">
+            <input type="radio" name="plan" value="M03" class="sr-only" />
+            <div class="flex items-center gap-2.5">
+              <span class="w-2 h-2 rounded-full bg-zinc-600"></span>
+              <span class="text-xs font-medium text-zinc-200">٣ مانگ</span>
+            </div>
+            <span class="text-[11px] font-mono font-semibold text-zinc-300">١٠٠,٠٠٠ د.ع</span>
+          </label>
+
+          <!-- Plan: 6 Months -->
+          <label class="relative flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-zinc-800/80 bg-zinc-950/60 hover:bg-zinc-900/60 cursor-pointer transition-all has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-950/20">
+            <input type="radio" name="plan" value="M06" class="sr-only" />
+            <div class="flex items-center gap-2.5">
+              <span class="w-2 h-2 rounded-full bg-zinc-600"></span>
+              <span class="text-xs font-medium text-zinc-200">٦ مانگ</span>
+            </div>
+            <span class="text-[11px] font-mono font-semibold text-zinc-300">١٥٠,٠٠٠ د.ع</span>
+          </label>
+
+          <!-- Plan: 1 Year -->
+          <label class="relative flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-zinc-800/80 bg-zinc-950/60 hover:bg-zinc-900/60 cursor-pointer transition-all has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-950/20">
+            <input type="radio" name="plan" value="Y01" class="sr-only" />
+            <div class="flex items-center gap-2.5">
+              <span class="w-2 h-2 rounded-full bg-zinc-600"></span>
+              <span class="text-xs font-medium text-zinc-200">١ ساڵ (ساڵانە)</span>
+            </div>
+            <span class="text-[11px] font-mono font-semibold text-zinc-300">٢٩٠,٠٠٠ د.ع</span>
+          </label>
+
+          <!-- Plan: Lifetime -->
+          <label class="relative flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-zinc-800/80 bg-zinc-950/60 hover:bg-zinc-900/60 cursor-pointer transition-all has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-950/20">
+            <input type="radio" name="plan" value="LFT" checked class="sr-only" />
+            <div class="flex items-center gap-2.5">
+              <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+              <span class="text-xs font-semibold text-indigo-200">هەتاهەتایی (Lifetime)</span>
+            </div>
+            <span class="text-[11px] font-mono font-bold text-emerald-400">٤٥٠,٠٠٠ د.ع</span>
+          </label>
+
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <button 
+        id="generateBtn"
+        type="button" 
+        class="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold text-xs shadow-lg shadow-indigo-600/20 transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
+      >
+        <span>دروستکردنی کلیلی چالاککردن</span>
+      </button>
+
+      <!-- Result Card -->
+      <div id="resultCard" class="hidden p-4 rounded-xl bg-zinc-950 border border-zinc-800 space-y-3">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-emerald-400 font-semibold flex items-center gap-1.5">
+            <span>✓</span>
+            <span>کلیلی مۆڵەتنامە ئامادەیە</span>
+          </span>
+          <span id="planBadge" class="text-[10px] font-mono text-zinc-400"></span>
+        </div>
+
+        <div class="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-lg p-1.5 ps-3">
+          <input 
+            type="text" 
+            id="resultKeyInput" 
+            readonly 
+            class="flex-1 bg-transparent text-white font-mono text-xs font-bold focus:outline-none select-all tracking-wider" 
+            dir="ltr"
+          />
+          <button 
+            id="copyBtn" 
+            type="button"
+            class="h-8 px-3 bg-zinc-800 hover:bg-zinc-700 text-white text-xs font-semibold rounded-md transition-colors shrink-0 cursor-pointer"
+          >
+            کۆپیکردن
+          </button>
+        </div>
+
+        <!-- WhatsApp Quick Share -->
+        <a 
+          id="whatsappBtn" 
+          href="#" 
+          target="_blank" 
+          class="flex items-center justify-center gap-1.5 w-full h-9 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-300 border border-emerald-500/20 rounded-lg text-xs font-medium transition-colors"
+        >
+          <span>ناردن بۆ کڕیار لە ڕێگەی واتسئاپ</span>
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-6 pt-4 border-t border-zinc-800/60 text-center text-[11px] text-zinc-500 font-normal">
+      سیستەمی باران POS • مۆڵەتی پارێزراو
+    </div>
+
+  </div>
+
+  <script>
+    const LICENSE_SECRET = 'baran-pos-license-secret-2026-kak-ali-muhammad';
+    const LICENSE_PREFIX = 'BARAN';
+
+    const PLANS = {
+      T07: { nameKu: '٧ ڕۆژ (تاقیکردنەوە)', days: 7, price: 'بێ بەرامبەر' },
+      M03: { nameKu: '٣ مانگ', days: 90, price: '١٠٠,٠٠٠ د.ع' },
+      M06: { nameKu: '٦ مانگ', days: 180, price: '١٥٠,٠٠٠ د.ع' },
+      Y01: { nameKu: '١ ساڵ', days: 365, price: '٢٩٠,٠٠٠ د.ع' },
+      LFT: { nameKu: 'هەتاهەتایی', days: 0, price: '٤٥٠,٠٠٠ د.ع' },
+    };
+
+    // HMAC-SHA256 using native Web Crypto API
+    async function hmacSha256(message, secret) {
+      const encoder = new TextEncoder();
+      const keyData = encoder.encode(secret);
+      const msgData = encoder.encode(message);
+
+      const cryptoKey = await crypto.subtle.importKey(
+        'raw',
+        keyData,
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+
+      const signature = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
+      const hashArray = Array.from(new Uint8Array(signature));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+    }
+
+    async function generateKey(hwId, planCode) {
+      const plan = PLANS[planCode] || PLANS.LFT;
+      let expirySec;
+      if (planCode === 'LFT') {
+        expirySec = 253402300799; // 9999-12-31
+      } else {
+        const nowSec = Math.floor(Date.now() / 1000);
+        expirySec = nowSec + plan.days * 86400;
+      }
+
+      const expiryHex = expirySec.toString(16).toUpperCase().padStart(8, '0');
+      const payload = `${hwId.trim()}|${planCode}|${expirySec}`;
+      const fullSig = await hmacSha256(payload, LICENSE_SECRET);
+      const sigSnippet = fullSig.substring(0, 16);
+      const sigParts = sigSnippet.match(/.{1,4}/g) || [];
+
+      return `${LICENSE_PREFIX}-${planCode}-${expiryHex}-${sigParts.join('-')}`;
+    }
+
+    document.getElementById('generateBtn').addEventListener('click', async () => {
+      const hwInput = document.getElementById('hardwareIdInput');
+      const hwId = hwInput.value.trim();
+
+      if (!hwId) {
+        alert('تکایە سەرەتا Hardware ID ی کڕیار لە خانەکە دابنێ.');
+        hwInput.focus();
+        return;
+      }
+
+      const selectedPlan = document.querySelector('input[name="plan"]:checked')?.value || 'LFT';
+      const key = await generateKey(hwId, selectedPlan);
+      const planInfo = PLANS[selectedPlan];
+
+      const resultCard = document.getElementById('resultCard');
+      const resultKeyInput = document.getElementById('resultKeyInput');
+      const planBadge = document.getElementById('planBadge');
+      const whatsappBtn = document.getElementById('whatsappBtn');
+
+      resultKeyInput.value = key;
+      planBadge.textContent = `${planInfo.nameKu} • ${planInfo.price}`;
+      resultCard.classList.remove('hidden');
+
+      // WhatsApp text generator
+      const waMsg = encodeURIComponent(
+        `سڵاو بەڕێز،\n\nئەمە کلیلی چالاککردنی سیستەمی باران POS ـە بۆ پلانی (${planInfo.nameKu}):\n\n🔑 ${key}\n\nتکایە کلیلەکە کۆپی بکە و لەناو بەرنامەکە دایبنێ و کلیک لە "چالاککردنی سیستەم" بکە.`
+      );
+      whatsappBtn.href = `https://api.whatsapp.com/send?text=${waMsg}`;
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      const keyInput = document.getElementById('resultKeyInput');
+      keyInput.select();
+      navigator.clipboard.writeText(keyInput.value);
+      const copyBtn = document.getElementById('copyBtn');
+      copyBtn.textContent = 'کۆپیکرا ✓';
+      copyBtn.classList.add('bg-emerald-600', 'text-white');
+      setTimeout(() => {
+        copyBtn.textContent = 'کۆپیکردن';
+        copyBtn.classList.remove('bg-emerald-600', 'text-white');
+      }, 2000);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "databaseUrl": "libsql://baran-pos-amdakalar.aws-ap-northeast-1.turso.io",
+  "authToken": "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODgxMTgyMDcsImlkIjoiMDFhMDU0MWQtNDIwMS03ZTE0LWE5YTYtYzA4YzQ0OWZmYTIwIiwia2lkIjoiOFZCRHU2WTVhcm9UanN3YkpoQ0tYenl2dkhFVnJnckJ1ODRja21NX3ROYyIsInJpZCI6IjExODdlMzNkLTNlODUtNDExYi1hZTQ0LTkyNTQxMmI0OWE5OSJ9.RKXSax5xEx37Z8OW9Jga7sl4deo6FFWNihLJ-lB9YnJ8swENQOgAWBwx70yHCUmBziXSwaTfeuRzUCesVWzSCg",
+  "tableName": "pos_licenses"
+}

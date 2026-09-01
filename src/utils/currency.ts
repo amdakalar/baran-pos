@@ -24,7 +24,7 @@ export function formatCurrency(
     // IQD (Iraqi Dinar)
     const formattedNumber = Math.round(amountInIQD).toLocaleString('en-US');
     if (lang === 'ku') {
-      return `${formattedNumber} د.ع`;
+      return formattedNumber;
     }
     return `${formattedNumber} IQD`;
   }

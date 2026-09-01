@@ -1,7 +1,9 @@
 import React from 'react';
-import { Barcode, Printer, Sparkles, RefreshCw, X, Search, Plus } from 'lucide-react';
+import { Barcode, Printer, Sparkles, RefreshCw, X, Search, Plus, CheckCircle2 } from 'lucide-react';
+import JsBarcode from 'jsbarcode';
 import { Product, SystemConfig } from '../types';
 import { Currency, formatCurrency } from '../utils/currency';
+import { normalizeBarcode } from '../utils/barcodeScanner';
 
 interface BarcodePrinterProps {
   products: Product[];
@@ -9,55 +11,52 @@ interface BarcodePrinterProps {
   lang?: 'en' | 'ku';
   currency?: Currency;
   exchangeRate?: number;
+  onAddProduct?: (product: Product) => void;
 }
 
-// Vector SVG Barcode Graphic (100% printable on all printers & PDFs)
+// 100% Optical-Scanner-Compliant Vector SVG Barcode (Standard Code128 / EAN-13)
 const BarcodeGraphic: React.FC<{ code: string }> = ({ code }) => {
-  const bars = React.useMemo(() => {
-    const list: { width: number }[] = [];
-    const seedStr = code || 'BARAN-1001';
-    for (let i = 0; i < seedStr.length; i++) {
-      const charCode = seedStr.charCodeAt(i);
-      list.push({ width: (charCode % 3) + 1 });
-      list.push({ width: ((charCode * 7) % 2) + 1 });
+  const svgRef = React.useRef<SVGSVGElement | null>(null);
+
+  React.useEffect(() => {
+    if (!svgRef.current) return;
+    const cleanCode = normalizeBarcode(code) || '10001234';
+    try {
+      JsBarcode(svgRef.current, cleanCode, {
+        format: 'CODE128',
+        width: 1.8,
+        height: 40,
+        displayValue: false,
+        margin: 6,
+        background: '#ffffff',
+        lineColor: '#000000',
+        flat: true,
+      });
+    } catch {
+      try {
+        JsBarcode(svgRef.current, cleanCode.replace(/[^A-Za-z0-9]/g, ''), {
+          format: 'CODE39',
+          width: 1.8,
+          height: 40,
+          displayValue: false,
+          margin: 6,
+          background: '#ffffff',
+          lineColor: '#000000',
+          flat: true,
+        });
+      } catch (err) {
+        console.error('Barcode rendering error:', err);
+      }
     }
-    // Add start/stop guard bars for Code128 look
-    return [
-      { width: 2 }, { width: 1 }, { width: 1 },
-      ...list,
-      { width: 1 }, { width: 2 }, { width: 2 }
-    ];
   }, [code]);
 
-  const totalWidth = bars.reduce((sum, b) => sum + b.width + 1.5, 0);
-
   return (
-    <div className="flex items-center justify-center my-1 h-7 w-full overflow-hidden">
+    <div className="flex items-center justify-center my-0.5 w-full bg-white overflow-hidden py-0.5">
       <svg
-        className="h-7 w-auto max-w-full"
-        viewBox={`0 0 ${totalWidth} 32`}
-        preserveAspectRatio="none"
-        style={{ color: '#000000' }}
-      >
-        {(() => {
-          let currentX = 0;
-          return bars.map((bar, idx) => {
-            const x = currentX;
-            currentX += bar.width + 1.5;
-            return (
-              <rect
-                key={idx}
-                x={x}
-                y={0}
-                width={bar.width}
-                height={32}
-                fill="#000000"
-                style={{ fill: '#000000' }}
-              />
-            );
-          });
-        })()}
-      </svg>
+        ref={svgRef}
+        className="w-full max-h-12 object-contain"
+        style={{ shapeRendering: 'crispEdges' }}
+      />
     </div>
   );
 };
@@ -68,6 +67,7 @@ export const BarcodePrinter: React.FC<BarcodePrinterProps> = ({
   lang = 'en',
   currency = 'IQD',
   exchangeRate = 1500,
+  onAddProduct,
 }) => {
   // Mode: 'existing' or 'custom'
   const [mode, setMode] = React.useState<'existing' | 'custom'>('existing');
@@ -85,6 +85,7 @@ export const BarcodePrinter: React.FC<BarcodePrinterProps> = ({
   const [customName, setCustomName] = React.useState('');
   const [customBarcode, setCustomBarcode] = React.useState('');
   const [customPrice, setCustomPrice] = React.useState<number>(1000);
+  const [autoSaveToProducts, setAutoSaveToProducts] = React.useState<boolean>(true);
 
   // Active label item being printed
   const selectedProduct = products.find((p) => p.id === selectedProductId) || products[0];
@@ -107,24 +108,51 @@ export const BarcodePrinter: React.FC<BarcodePrinterProps> = ({
   const activeLabelData = mode === 'existing' && selectedProduct
     ? {
         name: lang === 'ku' ? (selectedProduct.nameKu || selectedProduct.name) : selectedProduct.name,
-        barcode: selectedProduct.barcode,
+        barcode: normalizeBarcode(selectedProduct.barcode) || '10001234',
         price: selectedProduct.retailPrice,
       }
     : {
         name: customName || (lang === 'ku' ? 'کاڵای نوێ' : 'New Custom Item'),
-        barcode: customBarcode || 'BARAN-8849201',
+        barcode: normalizeBarcode(customBarcode) || '88401234',
         price: customPrice,
       };
 
   const handleGenerateRandomBarcode = () => {
-    const randomNum = Math.floor(100000000000 + Math.random() * 900000000000);
-    setCustomBarcode(`884${randomNum}`);
+    const randomNum = Math.floor(10000000 + Math.random() * 90000000);
+    setCustomBarcode(String(randomNum));
   };
 
   const handleCreateCustomBarcodeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customBarcode) handleGenerateRandomBarcode();
-    setMode('custom');
+    const cleanBarcode = normalizeBarcode(customBarcode) || String(Math.floor(10000000 + Math.random() * 90000000));
+    const finalName = customName.trim() || (lang === 'ku' ? 'کاڵای نوێ' : 'Custom Item');
+    setCustomBarcode(cleanBarcode);
+
+    if (autoSaveToProducts && onAddProduct) {
+      const newProduct: Product = {
+        id: `prod_${Date.now()}`,
+        name: finalName,
+        nameKu: finalName,
+        sku: cleanBarcode,
+        barcode: cleanBarcode,
+        categoryId: products[0]?.categoryId || 'cat_1',
+        brandId: products[0]?.brandId || 'brand_1',
+        itemTypeId: products[0]?.itemTypeId || 'type_1',
+        costPrice: Math.round(customPrice * 0.7),
+        retailPrice: customPrice,
+        wholesalePrice: customPrice,
+        stockQuantity: 100,
+        unit: 'piece',
+        minStockAlert: 5,
+        isActive: true,
+      };
+      onAddProduct(newProduct);
+      setSelectedProductId(newProduct.id);
+      setMode('existing');
+    } else {
+      setMode('custom');
+    }
+
     setIsCustomBarcodeModalOpen(false);
   };
 
@@ -367,10 +395,10 @@ export const BarcodePrinter: React.FC<BarcodePrinterProps> = ({
                     <div
                       key={idx}
                       className="border border-black p-2 text-center flex flex-col justify-between items-center bg-white rounded-none select-text break-inside-avoid shadow-2xs"
-                      style={{ height: layout === 'a4_grid' ? '36mm' : 'auto', minHeight: '85px' }}
+                      style={{ height: layout === 'a4_grid' ? '40mm' : 'auto', minHeight: '96px' }}
                     >
                       {/* Top Header: Shop Name & Retail Price */}
-                      <div className="w-full flex items-center justify-between gap-1 border-b border-black/25 pb-0.5 leading-tight">
+                      <div className="w-full flex items-center justify-between gap-1 border-b border-black/30 pb-0.5 leading-tight">
                         <span className="text-[9px] font-black font-sans tracking-tight truncate uppercase text-black">
                           {shopTitle}
                         </span>
@@ -455,7 +483,7 @@ export const BarcodePrinter: React.FC<BarcodePrinterProps> = ({
 
               <div>
                 <label className="text-[10px] uppercase font-bold text-zinc-700 block mb-1 font-sans">
-                  {lang === 'ku' ? `نرخی فرۆشتن (${currency === 'IQD' ? 'د.ع' : '$'})` : `Retail Price (${currency === 'IQD' ? 'IQD' : '$'})`}
+                  {lang === 'ku' ? `نرخی فرۆشتن${currency === 'USD' ? ' ($)' : ''}` : `Retail Price (${currency === 'IQD' ? 'IQD' : '$'})`}
                 </label>
                 <input
                   type="number"
@@ -466,6 +494,20 @@ export const BarcodePrinter: React.FC<BarcodePrinterProps> = ({
                   onChange={(e) => setCustomPrice(parseFloat(e.target.value) || 0)}
                   className="w-full h-9 bg-white border border-zinc-300 px-3 text-zinc-900 font-mono font-black text-sm focus:border-black outline-none rounded-none"
                 />
+              </div>
+
+              {/* Auto Save to Inventory Products Checkbox */}
+              <div className="flex items-center gap-2 pt-1 font-sans">
+                <input
+                  type="checkbox"
+                  id="autoSaveProd"
+                  checked={autoSaveToProducts}
+                  onChange={(e) => setAutoSaveToProducts(e.target.checked)}
+                  className="w-4 h-4 accent-black rounded cursor-pointer"
+                />
+                <label htmlFor="autoSaveProd" className="text-xs font-bold text-zinc-800 cursor-pointer select-none">
+                  {lang === 'ku' ? 'ئەم کاڵایە ڕاستەوخۆ لە سیستەمی فرۆشتن تۆمار بکە' : 'Automatically save this item to POS Inventory'}
+                </label>
               </div>
 
               <div className="pt-3 border-t border-zinc-200 flex justify-end gap-2 font-sans">

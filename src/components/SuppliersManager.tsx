@@ -126,44 +126,30 @@ export const SuppliersManager: React.FC<SuppliersManagerProps> = ({
   const [activeSupplierReceipt, setActiveSupplierReceipt] = React.useState<SupplierPaymentReceipt | null>(null);
 
   // Supplier Payments History State
-  const [paymentsHistory, setPaymentsHistory] = React.useState<SupplierPaymentReceipt[]>(() => {
-    try {
-      const saved = localStorage.getItem('baran_pos_supplier_payments');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [paymentsHistory, setPaymentsHistory] = React.useState<SupplierPaymentReceipt[]>([]);
+
+  // Load supplier payments from encrypted DB on mount
+  React.useEffect(() => {
+    window.electronAPI?.db?.get<SupplierPaymentReceipt[]>('baran_pos_supplier_payments', []).then((saved) => {
+      if (saved && saved.length > 0) setPaymentsHistory(saved);
+    }).catch(() => {});
+  }, []);
 
   // Purchase Invoices History State
-  const [purchaseInvoices, setPurchaseInvoices] = React.useState<PurchaseInvoice[]>(() => {
-    if (propPurchaseInvoices && propPurchaseInvoices.length > 0) return propPurchaseInvoices;
-    try {
-      const saved = localStorage.getItem('baran_pos_purchase_invoices');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return propPurchaseInvoices || [];
-    }
-  });
+  const [purchaseInvoices, setPurchaseInvoices] = React.useState<PurchaseInvoice[]>(propPurchaseInvoices || []);
 
   // Sync state with props
   React.useEffect(() => {
-    if (propPurchaseInvoices && propPurchaseInvoices.length > 0) {
+    if (propPurchaseInvoices) {
       setPurchaseInvoices(propPurchaseInvoices);
     }
   }, [propPurchaseInvoices]);
 
-  // Persist to LocalStorage
+  // Persist supplier payments to encrypted DB
   React.useEffect(() => {
-    try {
-      localStorage.setItem('baran_pos_purchase_invoices', JSON.stringify(purchaseInvoices));
-    } catch {}
-  }, [purchaseInvoices]);
-
-  React.useEffect(() => {
-    try {
-      localStorage.setItem('baran_pos_supplier_payments', JSON.stringify(paymentsHistory));
-    } catch {}
+    if (paymentsHistory.length > 0) {
+      window.electronAPI?.db?.set('baran_pos_supplier_payments', paymentsHistory).catch(() => {});
+    }
   }, [paymentsHistory]);
 
   // Form State for Add / Edit Supplier

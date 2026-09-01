@@ -189,7 +189,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
               <th className="p-3 text-start font-bold w-36 tracking-normal">{lang === 'ku' ? 'تۆمارکراوە لەلایەن' : 'Recorded By'}</th>
               <th className="p-3 text-start font-bold w-44 tracking-normal">{lang === 'ku' ? 'جۆری خەرجی' : 'Category'}</th>
               <th className="p-3 text-start font-bold w-32 tracking-normal">{lang === 'ku' ? 'بەروار' : 'Date'}</th>
-              <th className="p-3 text-end font-bold w-36 tracking-normal">{lang === 'ku' ? `بڕ (${currency === 'IQD' ? 'د.ع' : '$'})` : `Amount (${currency === 'IQD' ? 'IQD' : '$'})`}</th>
+              <th className="p-3 text-end font-bold w-36 tracking-normal">{lang === 'ku' ? `بڕ${currency === 'USD' ? ' ($)' : ''}` : `Amount (${currency === 'IQD' ? 'IQD' : '$'})`}</th>
               <th className="p-3 text-end font-bold w-24 tracking-normal">{lang === 'ku' ? 'کردارەکان' : 'Actions'}</th>
             </tr>
           </thead>
@@ -325,7 +325,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-                    {lang === 'ku' ? `بڕ (${currency === 'IQD' ? 'د.ع' : '$'})` : `Amount (${currency === 'IQD' ? 'IQD' : '$'})`}
+                    {lang === 'ku' ? `بڕ${currency === 'USD' ? ' ($)' : ''}` : `Amount (${currency === 'IQD' ? 'IQD' : '$'})`}
                     <span className="text-rose-600 ms-0.5">*</span>
                   </label>
                   <input
@@ -443,7 +443,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="block text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-                    {lang === 'ku' ? `بڕ (${currency === 'IQD' ? 'د.ع' : '$'})` : `Amount (${currency === 'IQD' ? 'IQD' : '$'})`}
+                    {lang === 'ku' ? `بڕ${currency === 'USD' ? ' ($)' : ''}` : `Amount (${currency === 'IQD' ? 'IQD' : '$'})`}
                     <span className="text-rose-600 ms-0.5">*</span>
                   </label>
                   <input
@@ -555,7 +555,7 @@ export const ExpensesManager: React.FC<ExpensesManagerProps> = ({
                     <th className="p-2 border-r border-zinc-300 text-start">{lang === 'ku' ? 'تۆمارکراوە لەلایەن' : 'Recorded By'}</th>
                     <th className="p-2 border-r border-zinc-300 text-start">{lang === 'ku' ? 'جۆری خەرجی' : 'Category'}</th>
                     <th className="p-2 border-r border-zinc-300 text-start">{lang === 'ku' ? 'بەروار' : 'Date'}</th>
-                    <th className="p-2 border-r border-zinc-300 text-end">{lang === 'ku' ? 'بڕ (د.ع)' : 'Amount'}</th>
+                    <th className="p-2 border-r border-zinc-300 text-end">{lang === 'ku' ? 'بڕ' : 'Amount'}</th>
                     <th className="p-2 text-center w-24">{lang === 'ku' ? 'کردارەکان' : 'Actions'}</th>
                   </tr>
                 </thead>

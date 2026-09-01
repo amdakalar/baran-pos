@@ -251,6 +251,8 @@ export type NavigationTab =
   | 'audit_backup'
   | 'admin';
 
+export type DisplayScale = 'small' | 'medium' | 'large';
+
 export interface SystemConfig {
   shopNameEn: string;
   shopNameKu: string;
@@ -265,4 +267,5 @@ export interface SystemConfig {
   receiptHeaderKu?: string;
   receiptFooterKu?: string;
   theme?: 'light' | 'dark';
+  displayScale?: DisplayScale;
 }
