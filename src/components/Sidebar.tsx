@@ -571,45 +571,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
-        {/* License Plan & Cloud Status Badges */}
-        {!isCollapsed && licenseStatus && licenseStatus.valid && (
-          <div className="mt-1.5 space-y-1">
-            <div className="px-2 py-1 rounded-lg bg-slate-100/80 border border-slate-200/90 flex items-center justify-between text-[10px]">
-              <div className="flex items-center gap-1 font-bold text-slate-700 truncate">
-                <span>{licenseStatus.isLifetime ? '👑' : '⏳'}</span>
-                <span className="truncate">{licenseStatus.planNameKu || 'مۆڵەتی باران'}</span>
-              </div>
-              <span className={`font-mono font-black px-1.5 py-0.2 rounded-md text-[9px] shrink-0 ${
-                licenseStatus.isLifetime
-                  ? 'bg-emerald-600 text-white'
-                  : licenseStatus.daysRemaining && licenseStatus.daysRemaining <= 10
-                  ? 'bg-rose-500 text-white'
-                  : 'bg-indigo-600 text-white'
-              }`}>
-                {licenseStatus.isLifetime ? 'هەمیشەیی' : `${licenseStatus.daysRemaining} ڕۆژ`}
+        {/* Cloud Status Indicator */}
+        {!isCollapsed && cloudStatus && (
+          <div className="mt-1.5">
+            <div className={`px-2 py-0.5 rounded-lg flex items-center justify-between text-[9px] font-bold ${
+              cloudStatus.isOnline
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
+                : cloudStatus.state === 'offline_warning'
+                ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
+                : 'bg-slate-100 text-slate-600 border border-slate-200/80'
+            }`}>
+              <span className="flex items-center gap-1">
+                <span className={`w-1.5 h-1.5 rounded-full ${cloudStatus.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
+                <span>{cloudStatus.isOnline ? 'کلاود چالاکە' : 'ئۆفلاین'}</span>
               </span>
-            </div>
-
-            {/* Cloud Status Indicator */}
-            {cloudStatus && (
-              <div className={`px-2 py-0.5 rounded-lg flex items-center justify-between text-[9px] font-bold ${
-                cloudStatus.isOnline
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/80'
-                  : cloudStatus.state === 'offline_warning'
-                  ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
-                  : 'bg-slate-100 text-slate-600 border border-slate-200/80'
-              }`}>
-                <span className="flex items-center gap-1">
-                  <span className={`w-1.5 h-1.5 rounded-full ${cloudStatus.isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></span>
-                  <span>{cloudStatus.isOnline ? 'کلاود چالاکە' : 'ئۆفلاین'}</span>
+              {!cloudStatus.isOnline && cloudStatus.remainingSeconds > 0 && (
+                <span className="font-mono text-[8px]">
+                  {Math.floor(cloudStatus.remainingSeconds / 3600)} کاتژمێر
                 </span>
-                {!cloudStatus.isOnline && cloudStatus.remainingSeconds > 0 && (
-                  <span className="font-mono text-[8px]">
-                    {Math.floor(cloudStatus.remainingSeconds / 3600)} کاتژمێر
-                  </span>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 

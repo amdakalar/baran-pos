@@ -54,6 +54,7 @@ import {
   ShieldCheck,
   History,
   Check,
+  KeyRound,
 } from 'lucide-react';
 import { SystemConfig, AuditLog, Product, DisplayScale } from '../types';
 import { CloudBackupItem } from '../types/electron';
@@ -89,6 +90,8 @@ interface SettingsManagerProps {
   invoicesCount?: number;
   expensesCount?: number;
   heldSalesCount?: number;
+  licenseStatus?: any;
+  cloudStatus?: any;
 }
 
 type SettingsSubTab = 'store_profile' | 'system_preferences' | 'audit_logs' | 'database_management' | 'system_updates';
@@ -116,6 +119,8 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
   invoicesCount = 0,
   expensesCount = 0,
   heldSalesCount = 0,
+  licenseStatus,
+  cloudStatus,
 }) => {
   const t = (ku: string, en: string) => (lang === 'ku' ? ku : en);
 
@@ -632,32 +637,36 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">{t('ژمارەی پەیوەندی / واتسئەپ:', 'Phone / WhatsApp:')}</label>
-                  <div className="relative">
+                  <div className="relative flex items-center">
+                    <div className="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none text-slate-400">
+                      <Phone className="w-4 h-4" />
+                    </div>
                     <input
                       type="text"
                       inputMode="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value.replace(/[^0-9+\-\s()]/g, ''))}
                       placeholder="0770 123 4567"
-                      className="w-full h-10 bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded-xl px-3.5 text-xs font-mono font-bold text-slate-800 outline-none transition-all shadow-2xs text-start"
+                      className="w-full h-10 bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded-xl ps-9.5 pe-3.5 text-xs font-mono font-bold text-slate-800 outline-none transition-all shadow-2xs text-start placeholder:text-slate-400"
                       dir="ltr"
                     />
-                    <Phone className="w-3.5 h-3.5 text-slate-400 absolute top-1/2 -translate-y-1/2 left-3 rtl:left-auto rtl:right-3 pointer-events-none" />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">{t('ناونیشان و شار:', 'Address / Location:')}</label>
-                  <div className="relative">
+                  <div className="relative flex items-center">
+                    <div className="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none text-slate-400">
+                      <MapPin className="w-4 h-4" />
+                    </div>
                     <input
                       type="text"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      placeholder="سلێمانی - شەقامی سەرەکی"
-                      className="w-full h-10 bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded-xl px-3.5 text-xs text-slate-800 outline-none transition-all shadow-2xs"
-                      dir="rtl"
+                      placeholder={lang === 'ku' ? 'سلێمانی - شەقامی سەرەکی' : 'Sulaymaniyah - Main Street'}
+                      className="w-full h-10 bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded-xl ps-9.5 pe-3.5 text-xs font-bold text-slate-800 outline-none transition-all shadow-2xs placeholder:text-slate-400"
+                      dir={lang === 'ku' ? 'rtl' : 'ltr'}
                     />
-                    <MapPin className="w-3.5 h-3.5 text-slate-400 absolute top-1/2 -translate-y-1/2 left-3 rtl:left-auto rtl:right-3 pointer-events-none" />
                   </div>
                 </div>
               </div>
@@ -671,7 +680,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                     value={receiptHeaderKu}
                     onChange={(e) => setReceiptHeaderKu(e.target.value)}
                     placeholder="بەخێربێن بۆ پەراوگەی باران"
-                    className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded-xl p-3 text-xs text-slate-800 outline-none transition-all shadow-2xs resize-none"
+                    className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded-xl p-3 text-xs text-slate-800 outline-none transition-all shadow-2xs resize-none placeholder:text-slate-400 font-medium"
                     dir="rtl"
                   />
                 </div>
@@ -683,7 +692,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                     value={receiptFooterKu}
                     onChange={(e) => setReceiptFooterKu(e.target.value)}
                     placeholder="سوپاس بۆ سەردانەکەت! بەهیوای دووبارە دیدەنتان"
-                    className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded-xl p-3 text-xs text-slate-800 outline-none transition-all shadow-2xs resize-none"
+                    className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded-xl p-3 text-xs text-slate-800 outline-none transition-all shadow-2xs resize-none placeholder:text-slate-400 font-medium"
                     dir="rtl"
                   />
                 </div>
@@ -693,7 +702,10 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
               <div className="pt-3 border-t border-slate-100">
                 <div className="space-y-1.5 max-w-xs">
                   <label className="text-xs font-bold text-slate-700 block">{t('ڕێژەی باجی پێشوەختە (%):', 'Default Tax Rate (%):')}</label>
-                  <div className="relative">
+                  <div className="relative flex items-center">
+                    <div className="absolute inset-y-0 start-0 ps-3 flex items-center pointer-events-none text-slate-400">
+                      <Percent className="w-3.5 h-3.5" />
+                    </div>
                     <input
                       type="number"
                       min="0"
@@ -711,12 +723,17 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                           setTaxPercent(0);
                         }
                       }}
-                      className="w-full h-10 bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded-xl px-3.5 text-xs font-mono font-bold text-slate-800 outline-none transition-all shadow-2xs"
+                      placeholder="0"
+                      className="w-full h-10 bg-slate-50 border border-slate-200 hover:border-slate-300 focus:border-indigo-500 focus:bg-white rounded-xl ps-9 pe-10 text-xs font-mono font-bold text-slate-800 outline-none transition-all shadow-2xs placeholder:text-slate-400 text-start"
+                      dir="ltr"
                     />
-                    <span className="w-3.5 h-3.5 text-slate-400 absolute top-1/2 -translate-y-1/2 left-3 rtl:left-auto rtl:right-3 pointer-events-none font-bold text-xs">
-                      %
-                    </span>
+                    <div className="absolute inset-y-0 end-0 pe-3 flex items-center pointer-events-none">
+                      <span className="text-[11px] font-bold text-slate-500 bg-slate-200/80 px-1.5 py-0.5 rounded">%</span>
+                    </div>
                   </div>
+                  <p className="text-[10px] text-slate-400 font-medium">
+                    {t('نموونە: 0 بۆ بێ باج، یان 5 بۆ %5 باج لەسەر کۆی پسوولە', 'e.g. 0 for no tax, or 5 for 5% tax on invoice')}
+                  </p>
                 </div>
               </div>
             </form>
@@ -1832,9 +1849,78 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
         </div>
       )}
 
-      {/* ── Subtab 5: System Updates ── */}
+      {/* ── Subtab 5: System Updates & License ── */}
       {activeTab === 'system_updates' && (
         <div className="space-y-4">
+          {/* 1. License & Subscription Status Card */}
+          {licenseStatus && (
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-5 sm:p-6 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
+                <div className="flex items-center gap-2">
+                  <KeyRound className="w-5 h-5 text-indigo-600 shrink-0" />
+                  <h2 className="font-black text-sm text-slate-800">
+                    {t('مۆڵەت و بەشداریکردنی بەرنامە', 'License & Subscription Status')}
+                  </h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-600 flex items-center gap-1">
+                    <span>{licenseStatus.isLifetime ? '👑' : '⏳'}</span>
+                    <span>{licenseStatus.planNameKu || 'مۆڵەتی باران'}</span>
+                  </span>
+                  <span className={`font-mono font-black px-2.5 py-1 rounded-lg text-xs shrink-0 ${
+                    licenseStatus.isLifetime
+                      ? 'bg-emerald-600 text-white'
+                      : licenseStatus.daysRemaining && licenseStatus.daysRemaining <= 10
+                      ? 'bg-rose-500 text-white'
+                      : 'bg-indigo-600 text-white'
+                  }`}>
+                    {licenseStatus.isLifetime ? t('هەمیشەیی (Lifetime)', 'Lifetime') : `${licenseStatus.daysRemaining} ڕۆژ ماوە`}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-4 space-y-1">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">
+                    {t('جۆری پلان و مۆڵەت:', 'Plan Type:')}
+                  </span>
+                  <span className="text-xs font-black text-slate-800 block">
+                    {licenseStatus.planNameKu || 'باران POS'}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-mono block">
+                    {licenseStatus.planCode || 'ACTIVE'}
+                  </span>
+                </div>
+
+                <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-4 space-y-1">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">
+                    {t('ماوەی مۆڵەت / بەسەرچوون:', 'Expiration / Remaining:')}
+                  </span>
+                  <span className="text-xs font-mono font-bold text-slate-800 block">
+                    {licenseStatus.isLifetime ? t('هەمیشەیی بێ بەسەرچوون', 'No Expiration') : `${licenseStatus.daysRemaining} ڕۆژ`}
+                  </span>
+                  {licenseStatus.expiresAt && !licenseStatus.isLifetime && (
+                    <span className="text-[10px] text-slate-500 font-mono block">
+                      {new Date(licenseStatus.expiresAt).toLocaleDateString('en-CA')}
+                    </span>
+                  )}
+                </div>
+
+                <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-4 space-y-1">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">
+                    {t('ناسنامەی ئامێر (Hardware ID):', 'Hardware Fingerprint:')}
+                  </span>
+                  <span className="text-xs font-mono font-bold text-slate-700 block truncate" title={licenseStatus.hardwareId} dir="ltr">
+                    {licenseStatus.hardwareId || 'LOCAL-SYSTEM'}
+                  </span>
+                  <span className="text-[10px] text-emerald-600 font-bold block">
+                    {t('تۆمارکراو و پارێزراو', 'Licensed & Protected')}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-5 sm:p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">

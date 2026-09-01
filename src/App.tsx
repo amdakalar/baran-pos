@@ -1403,6 +1403,8 @@ export default function App() {
             invoicesCount={invoices.length}
             expensesCount={expenses.length}
             heldSalesCount={heldSales.length}
+            licenseStatus={licenseStatus}
+            cloudStatus={cloudStatus}
           />
         )}
 
