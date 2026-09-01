@@ -68,9 +68,19 @@ export interface ElectronCloudBackupAPI {
   getLastStatus: () => Promise<{ lastTime: string | null; meta: CloudBackupItem | null }>;
 }
 
+export interface DownloadProgressInfo {
+  percent: number;
+  transferredMB: number;
+  totalMB: number;
+  speedMB: string;
+}
+
 export interface ElectronAppAPI {
   getVersion: () => Promise<string>;
   checkUpdate: () => Promise<{ hasUpdate: boolean; latestVersion: string; title: string; releaseNotes: string; downloadUrl: string } | null>;
+  downloadAndInstallUpdate: (url: string) => Promise<{ success: boolean; message: string }>;
+  onDownloadProgress: (callback: (data: DownloadProgressInfo) => void) => () => void;
+  onDownloadCompleted: (callback: (data: { tempFilePath: string }) => void) => () => void;
   openExternal: (url: string) => Promise<void>;
 }
 

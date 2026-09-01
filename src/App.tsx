@@ -482,6 +482,9 @@ export default function App() {
   // ── Auto-Update Detection & Notification Modal ──
   const [appUpdateAvailable, setAppUpdateAvailable] = React.useState<AppUpdateInfo | null>(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = React.useState<boolean>(false);
+  const [isFloatingBannerDismissed, setIsFloatingBannerDismissed] = React.useState<boolean>(() => {
+    return sessionStorage.getItem('baran_update_dismissed') === 'true';
+  });
 
   React.useEffect(() => {
     let isMounted = true;
@@ -518,6 +521,13 @@ export default function App() {
     // Snooze modal for 2 hours (user can still open via sidebar / settings)
     sessionStorage.setItem('baran_update_snoozed_until', String(Date.now() + 2 * 60 * 60 * 1000));
     setIsUpdateModalOpen(false);
+  };
+
+  const handleDismissFloatingBanner = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setIsFloatingBannerDismissed(true);
+    sessionStorage.setItem('baran_update_dismissed', 'true');
+    sessionStorage.setItem('baran_update_snoozed_until', String(Date.now() + 2 * 60 * 60 * 1000));
   };
 
   // Audit Helper
@@ -1473,7 +1483,7 @@ export default function App() {
       )}
 
       {/* Floating GitHub Release Update Notification (when modal is closed/snoozed) */}
-      {!isUpdateModalOpen && appUpdateAvailable && (
+      {!isUpdateModalOpen && appUpdateAvailable && !isFloatingBannerDismissed && (
         <div className="fixed bottom-5 left-5 right-5 sm:left-auto sm:right-6 sm:max-w-md z-50 bg-gradient-to-r from-zinc-900 to-indigo-950 text-white rounded-none p-4 shadow-2xl border border-indigo-500/40 flex items-center justify-between gap-3 animate-in slide-in-from-bottom-5">
           <div 
             onClick={() => setIsUpdateModalOpen(true)}
@@ -1488,7 +1498,7 @@ export default function App() {
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={() => openExternalUrl(appUpdateAvailable.downloadUrl)}
+              onClick={() => setIsUpdateModalOpen(true)}
               className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-black rounded-none shadow-xs flex items-center gap-1 cursor-pointer transition-all"
             >
               <Download className="w-3 h-3" />
@@ -1496,9 +1506,9 @@ export default function App() {
             </button>
             <button
               type="button"
-              onClick={handleSnoozeUpdate}
+              onClick={handleDismissFloatingBanner}
               className="p-1.5 rounded-none text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-              title={lang === 'ku' ? 'دواتر بیرم بخەرەوە' : 'Remind me later'}
+              title={lang === 'ku' ? 'داخستن' : 'Close'}
             >
               <X className="w-3.5 h-3.5" />
             </button>

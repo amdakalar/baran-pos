@@ -59,6 +59,18 @@ const electronAPI = {
       ipcRenderer.invoke('app:getVersion'),
     checkUpdate: (): Promise<any> =>
       ipcRenderer.invoke('app:checkUpdate'),
+    downloadAndInstallUpdate: (url: string): Promise<{ success: boolean; message: string }> =>
+      ipcRenderer.invoke('app:downloadAndInstallUpdate', url),
+    onDownloadProgress: (callback: (data: { percent: number; transferredMB: number; totalMB: number; speedMB: string }) => void) => {
+      const listener = (_: any, data: any) => callback(data);
+      ipcRenderer.on('app:downloadProgress', listener);
+      return () => ipcRenderer.removeListener('app:downloadProgress', listener);
+    },
+    onDownloadCompleted: (callback: (data: { tempFilePath: string }) => void) => {
+      const listener = (_: any, data: any) => callback(data);
+      ipcRenderer.on('app:downloadCompleted', listener);
+      return () => ipcRenderer.removeListener('app:downloadCompleted', listener);
+    },
     openExternal: (url: string): Promise<void> =>
       ipcRenderer.invoke('app:openExternal', url),
   },

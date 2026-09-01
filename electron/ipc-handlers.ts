@@ -3,6 +3,7 @@ import { getData, setData, deleteData, clearAllData, getAllKeys } from './databa
 import { checkLicense, activateLicense, generateHardwareId } from './license';
 import { evaluateLocalCloudStatus, syncCloudHeartbeat, getEffectiveTursoConfig, saveTursoConfig, TursoCloudConfig } from './cloud-license';
 import { createCloudBackup, listCloudBackups, restoreCloudBackup, getLastCloudBackupInfo } from './cloud-backup';
+import { downloadAndInstallUpdate } from './updater';
 
 export function registerIpcHandlers(): void {
   // ---- Database Operations ----
@@ -100,6 +101,10 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('app:checkUpdate', () => {
     return checkAppUpdates();
+  });
+
+  ipcMain.handle('app:downloadAndInstallUpdate', (event, downloadUrl: string) => {
+    return downloadAndInstallUpdate(downloadUrl, event);
   });
 
   ipcMain.handle('app:openExternal', (_event, url: string) => {
