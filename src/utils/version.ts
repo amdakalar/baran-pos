@@ -2,7 +2,7 @@
  * Baran POS - Version & Update Manager Utility
  */
 
-export const APP_VERSION = '1.0.4';
+export const APP_VERSION = '1.0.5';
 export const GITHUB_REPO = 'amdakalar/baran-pos';
 export const GITHUB_API_LATEST = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
 export const GITHUB_RAW_PKG = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/package.json`;
