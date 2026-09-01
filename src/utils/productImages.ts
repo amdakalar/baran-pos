@@ -47,3 +47,84 @@ export const getSampleImageForProduct = (name: string, categoryId?: string): str
   }
   return 'https://images.unsplash.com/photo-1586075010923-2dd4570fb338?auto=format&fit=crop&w=400&q=80';
 };
+
+/**
+ * Processes an uploaded image file or URL:
+ * 1. Resizes and squares it onto a 400x400 canvas.
+ * 2. Centers the product with natural aspect ratio so sides/edges are NEVER cropped or cut off.
+ * 3. Fills with a clean white background.
+ * 4. Compresses to webp/jpeg to keep database lightweight (~30KB-60KB).
+ */
+export async function processAndSquareProductImage(
+  input: File | string,
+  targetSize = 400,
+  quality = 0.88
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = targetSize;
+        canvas.height = targetSize;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(typeof input === 'string' ? input : '');
+          return;
+        }
+
+        // Fill background with clean white for a crisp, professional POS catalog look
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, targetSize, targetSize);
+
+        // Calculate aspect-ratio preserving dimensions with padding
+        const padding = 12; // 12px padding on all sides so it doesn't touch the borders
+        const maxDim = targetSize - padding * 2;
+        const scale = Math.min(maxDim / img.width, maxDim / img.height);
+        const drawWidth = img.width * scale;
+        const drawHeight = img.height * scale;
+        const offsetX = (targetSize - drawWidth) / 2;
+        const offsetY = (targetSize - drawHeight) / 2;
+
+        // Draw image smoothly
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+
+        // Export as WebP or JPEG
+        let dataUrl = canvas.toDataURL('image/webp', quality);
+        if (!dataUrl.startsWith('data:image/webp')) {
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+        resolve(dataUrl);
+      } catch (err) {
+        console.warn('Canvas squaring failed, falling back to original:', err);
+        resolve(typeof input === 'string' ? input : '');
+      }
+    };
+
+    img.onerror = () => {
+      if (typeof input === 'string') {
+        resolve(input);
+      } else {
+        reject(new Error('Failed to load image file'));
+      }
+    };
+
+    if (typeof input === 'string') {
+      img.src = input;
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (typeof e.target?.result === 'string') {
+          img.src = e.target.result;
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(input);
+    }
+  });
+}
+

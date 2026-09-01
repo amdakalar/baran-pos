@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { Product, Category, CartItem, Customer, HeldSale, SalesInvoice, UnitType, User, DisplayScale } from '../types';
 import { Currency, formatCurrency, fromBaseIQD, toBaseIQD } from '../utils/currency';
-import { getSampleImageForProduct } from '../utils/productImages';
+import { getSampleImageForProduct, PRESET_SAMPLE_IMAGES, processAndSquareProductImage } from '../utils/productImages';
 import { 
   normalizeBarcode, 
   findProductByBarcode, 
@@ -78,21 +78,6 @@ interface PosRegisterProps {
     isFullVoid: boolean
   ) => void;
 }
-
-const PRESET_SAMPLE_IMAGES = [
-  { name: 'پەڕە و کاغەز', url: 'https://images.unsplash.com/photo-1586075010923-2dd4570fb338?auto=format&fit=crop&w=400&q=80' },
-  { name: 'قەڵەم و نووسین', url: 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=400&q=80' },
-  { name: 'دەفتەر و کتێب', url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80' },
-  { name: 'مەرەکەب و تۆنەر', url: 'https://images.unsplash.com/photo-1612815150553-99ea45ef16ef?auto=format&fit=crop&w=400&q=80' },
-  { name: 'سەحافە و لامینەیت', url: 'https://images.unsplash.com/photo-1562654501-a0ccc0fc3fb1?auto=format&fit=crop&w=400&q=80' },
-  { name: 'ئامێری مەکتەب و قەداسە', url: 'https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=400&q=80' },
-  { name: 'حاسبە و ژمێریاری', url: 'https://images.unsplash.com/photo-1594980596870-8aa52a78d8cd?auto=format&fit=crop&w=400&q=80' },
-  { name: 'کەلوپەلی ئەندازە و نیگارکێشی', url: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=400&q=80' },
-  { name: 'فایل و دۆسیە', url: 'https://images.unsplash.com/photo-1586075010923-2dd4570fb338?auto=format&fit=crop&w=400&q=80' },
-  { name: 'چسپ و مەقەس', url: 'https://images.unsplash.com/photo-1584824486509-112e4181ff6b?auto=format&fit=crop&w=400&q=80' },
-  { name: 'ئیستیکەر و تێبینی', url: 'https://images.unsplash.com/photo-1586075010923-2dd4570fb338?auto=format&fit=crop&w=400&q=80' },
-  { name: 'چاپ و فۆتۆکۆپی', url: 'https://images.unsplash.com/photo-1562654501-a0ccc0fc3fb1?auto=format&fit=crop&w=400&q=80' },
-];
 
 const getCashierCartKey = (id: string) => `pos_cart_${id}`;
 
@@ -1023,11 +1008,11 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       {/* Thumbnail Image */}
-                      <div className="relative w-12 h-12 bg-zinc-100 rounded-md overflow-hidden shrink-0 border border-zinc-200">
+                      <div className="relative w-12 h-12 bg-white rounded-md overflow-hidden shrink-0 border border-zinc-200 flex items-center justify-center p-1">
                         <img
                           src={p.image || getSampleImageForProduct(p.nameKu || p.name, p.categoryId)}
                           alt={p.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                           loading="lazy"
                           onError={(e) => {
                             const fallback = getSampleImageForProduct(p.nameKu || p.name, p.categoryId);
@@ -1159,11 +1144,11 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                   }`}
                 >
                   {/* Top Section: Image Container with Soft Stock Badge & Discount Badge */}
-                  <div className={`relative w-full ${imgAspect} bg-zinc-100 overflow-hidden shrink-0 border border-zinc-200/80`}>
+                  <div className={`relative w-full ${imgAspect} bg-white flex items-center justify-center overflow-hidden shrink-0 border border-zinc-200/80 p-2`}>
                     <img
                       src={p.image || getSampleImageForProduct(p.nameKu || p.name, p.categoryId)}
                       alt={p.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                       loading="lazy"
                       onError={(e) => {
                         const fallback = getSampleImageForProduct(p.nameKu || p.name, p.categoryId);
@@ -2563,12 +2548,12 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
 
               {/* Image Preview */}
               <div className="flex justify-center">
-                <div className="w-32 h-32 bg-zinc-100 border border-zinc-300 rounded-md overflow-hidden flex items-center justify-center relative shadow-xs">
+                <div className="w-32 h-32 bg-white border border-zinc-300 rounded-md overflow-hidden flex items-center justify-center relative shadow-xs p-1.5">
                   {newImageUrl ? (
                     <img
                       src={newImageUrl}
                       alt="Preview"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   ) : (
                     <Package className="w-10 h-10 text-zinc-300" />
@@ -2585,7 +2570,16 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                   type="text"
                   placeholder="https://images.unsplash.com/..."
                   value={newImageUrl}
-                  onChange={(e) => setNewImageUrl(e.target.value)}
+                  onChange={async (e) => {
+                    const val = e.target.value;
+                    setNewImageUrl(val);
+                    if (val.startsWith('http')) {
+                      try {
+                        const squared = await processAndSquareProductImage(val, 400);
+                        setNewImageUrl(squared);
+                      } catch {}
+                    }
+                  }}
                   className="w-full bg-white border border-zinc-300 hover:border-zinc-400 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 px-3 py-1.5 text-xs text-zinc-900 rounded outline-none font-mono"
                   dir="ltr"
                 />
@@ -2604,16 +2598,21 @@ export const PosRegister: React.FC<PosRegisterProps> = ({
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          if (typeof reader.result === 'string') {
-                            setNewImageUrl(reader.result);
-                          }
-                        };
-                        reader.readAsDataURL(file);
+                        try {
+                          const squared = await processAndSquareProductImage(file, 400);
+                          setNewImageUrl(squared);
+                        } catch {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            if (typeof reader.result === 'string') {
+                              setNewImageUrl(reader.result);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }
                       }
                     }}
                     className="hidden"

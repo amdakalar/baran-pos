@@ -371,12 +371,12 @@ export const StockExpiryManager: React.FC<StockExpiryManagerProps> = ({
                       {/* 1. Product Info: Thumbnail + Kurdish Name */}
                       <td className="p-2.5 px-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 bg-white shrink-0 flex items-center justify-center shadow-2xs">
+                          <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 bg-white shrink-0 flex items-center justify-center p-0.5 shadow-2xs">
                             {p.image ? (
                               <img
                                 src={p.image}
                                 alt={p.name}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain"
                                 onError={(e) => { (e.currentTarget.style.display = 'none'); }}
                               />
                             ) : (

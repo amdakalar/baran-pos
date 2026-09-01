@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { Product, Category, Brand, ItemType, StockAdjustment, UnitType } from '../types';
 import { Currency, formatCurrency } from '../utils/currency';
-import { getSampleImageForProduct } from '../utils/productImages';
+import { getSampleImageForProduct, PRESET_SAMPLE_IMAGES, processAndSquareProductImage } from '../utils/productImages';
 import { normalizeBarcode } from '../utils/barcodeScanner';
 
 interface InventoryManagerProps {
@@ -45,15 +45,6 @@ interface InventoryManagerProps {
   currency?: Currency;
   exchangeRate?: number;
 }
-
-const PRESET_SAMPLE_IMAGES = [
-  { name: 'پەڕە و کاغەز', url: 'https://images.unsplash.com/photo-1586075010923-2dd4570fb338?auto=format&fit=crop&w=400&q=80' },
-  { name: 'قەڵەم و نووسین', url: 'https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=400&q=80' },
-  { name: 'دەفتەر و کتێب', url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80' },
-  { name: 'سەحافە و لامینەیت', url: 'https://images.unsplash.com/photo-1562654501-a0ccc0fc3fb1?auto=format&fit=crop&w=400&q=80' },
-  { name: 'مەرەکەب و تۆنەر', url: 'https://images.unsplash.com/photo-1612815150553-99ea45ef16ef?auto=format&fit=crop&w=400&q=80' },
-  { name: 'ئامێری مەکتەب و قەداسە', url: 'https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=400&q=80' },
-];
 
 export const InventoryManager: React.FC<InventoryManagerProps> = ({
   products,
@@ -855,12 +846,12 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                       {/* 1. Item Info: Thumbnail Image + Product Name */}
                       <td className="p-2.5 px-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 bg-white shrink-0 flex items-center justify-center shadow-2xs">
+                          <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 bg-white shrink-0 flex items-center justify-center p-0.5 shadow-2xs">
                             {p.image ? (
                               <img
                                 src={p.image}
                                 alt={p.name}
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain"
                                 onError={(e) => { (e.currentTarget.style.display = 'none'); }}
                               />
                             ) : (
@@ -1139,7 +1130,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                     <img
                       src={formState.image}
                       alt="Preview"
-                      className="w-10 h-10 object-cover rounded-lg border border-slate-200 shadow-2xs shrink-0"
+                      className="w-10 h-10 object-contain rounded-lg border border-slate-200 shadow-2xs shrink-0 bg-white p-0.5"
                     />
                     <div className="flex-1 min-w-0">
                       <span className="text-[11px] font-bold text-slate-700 block truncate">
@@ -1233,17 +1224,23 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          if (typeof reader.result === 'string') {
-                            setFormState((prev) => ({ ...prev, image: reader.result as string }));
-                            setIsImagePickerOpen(false);
-                          }
-                        };
-                        reader.readAsDataURL(file);
+                        try {
+                          const squared = await processAndSquareProductImage(file, 400);
+                          setFormState((prev) => ({ ...prev, image: squared }));
+                          setIsImagePickerOpen(false);
+                        } catch {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            if (typeof reader.result === 'string') {
+                              setFormState((prev) => ({ ...prev, image: reader.result as string }));
+                              setIsImagePickerOpen(false);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }
                       }
                     }}
                   />
@@ -1264,9 +1261,9 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({
                         setFormState({ ...formState, image: preset.url });
                         setIsImagePickerOpen(false);
                       }}
-                      className="group relative aspect-square rounded-lg overflow-hidden border border-slate-200 hover:border-blue-500 transition-all cursor-pointer shadow-2xs"
+                      className="group relative aspect-square rounded-lg overflow-hidden border border-slate-200 hover:border-blue-500 transition-all cursor-pointer shadow-2xs bg-white p-1"
                     >
-                      <img src={preset.url} alt={preset.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      <img src={preset.url} alt={preset.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform" />
                       <span className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-[9px] font-bold py-0.5 text-center truncate">
                         {preset.name}
                       </span>
